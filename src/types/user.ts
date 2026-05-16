@@ -1,0 +1,16 @@
+import { Document } from "mongoose";
+
+export enum UserRole {
+    ADMIN = "admin",
+    CUSTOMER = "customer",
+}
+
+export interface IUser extends Document {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    isActive: boolean;
+    createdAt: Date;
+    comparePassword(candidate: string): Promise<boolean>;
+}
