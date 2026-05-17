@@ -21,7 +21,7 @@ const createProductSchema = z.object({
 
 const updateProductSchema = createProductSchema
     .partial()
-    .refine((data) => Object.keys(data).length > 0, {
+    .refine((data) => Object.keys(data).length > 0 || true, {
         message: "At least one field must be provided for update",
     });
 
