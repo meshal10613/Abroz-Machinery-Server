@@ -7,6 +7,18 @@ const router = Router();
 
 router.post("/login", AuthController.login);
 
-router.get("/me", authenticate, authorize(UserRole.ADMIN), AuthController.getMe);
+router.get(
+    "/me",
+    authenticate,
+    authorize(UserRole.ADMIN),
+    AuthController.getMe,
+);
+
+router.patch(
+    "/change-password",
+    authenticate,
+    authorize(UserRole.ADMIN),
+    AuthController.changePassword,
+);
 
 export const authRoutes = router;
