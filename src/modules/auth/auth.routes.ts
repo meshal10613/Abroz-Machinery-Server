@@ -2,6 +2,11 @@ import { Router } from "express";
 import { authenticate, authorize } from "./auth.middleware";
 import { UserRole } from "../../types/user";
 import { AuthController } from "./auth.controller";
+import {
+    validationProperty,
+    zodValidate,
+} from "../../middlewares/zodValidation";
+import { authValidation } from "./auth.validation";
 
 const router = Router();
 
@@ -11,6 +16,7 @@ router.get(
     "/me",
     authenticate,
     authorize(UserRole.ADMIN),
+    zodValidate(authValidation.loginSchema, validationProperty.BODY),
     AuthController.getMe,
 );
 

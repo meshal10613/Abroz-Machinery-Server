@@ -2,6 +2,8 @@ import { Router } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware";
 import { UserRole } from "../../types/user";
 import { CategoryController } from "./category.controller";
+import { validationProperty, zodValidate } from "../../middlewares/zodValidation";
+import { categoryValidation } from "./category.validation";
 
 const router = Router();
 
@@ -10,6 +12,7 @@ router.post(
     "/",
     authenticate,
     authorize(UserRole.ADMIN),
+    zodValidate(categoryValidation.createCategorySchema, validationProperty.BODY),
     CategoryController.createCategory,
 );
 
@@ -24,6 +27,7 @@ router.patch(
     "/:id",
     authenticate,
     authorize(UserRole.ADMIN),
+    zodValidate(categoryValidation.updateCategorySchema, validationProperty.BODY),
     CategoryController.updateCategory,
 );
 

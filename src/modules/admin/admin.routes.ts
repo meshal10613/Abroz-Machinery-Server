@@ -2,6 +2,11 @@ import { Router } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware";
 import { UserRole } from "../../types/user";
 import { AdminController } from "./admin.controller";
+import {
+    validationProperty,
+    zodValidate,
+} from "../../middlewares/zodValidation";
+import { adminValidation } from "./admin.validation";
 
 const router = Router();
 
@@ -18,6 +23,7 @@ router.patch(
     "/me",
     authenticate,
     authorize(UserRole.ADMIN),
+    zodValidate(adminValidation.updateAdminSchema, validationProperty.BODY),
     AdminController.updateAdminProfile,
 );
 
