@@ -3,6 +3,8 @@ import { User } from "../../models/user.model";
 import { JwtPayload } from "../../types";
 import { env } from "../../config/env";
 import { LoginInput, LoginResult } from "./auth.interface";
+import { UserRole } from "../../types/user";
+import { Admin } from "../../models/admin.model";
 
 const loginUser = async (input: LoginInput): Promise<LoginResult> => {
     const { email, password } = input;
@@ -37,4 +39,30 @@ const loginUser = async (input: LoginInput): Promise<LoginResult> => {
     };
 };
 
-export const AuthService = { loginUser };
+const getMe = async (userId: string) => {
+    // 1. Get user
+    const user = await User.findById(userId).lean();
+
+    if (!user || !user.isActive) {
+        throw new Error("User not found or inactive");
+    }
+
+    let adminData = null;
+
+    // 2. If admin → fetch admin profile
+    if (user.role === UserRole.ADMIN) {
+        adminData = await Admin.findOne({ user: user._id }).lean();
+    }
+
+    // 3. Return merged response
+    return {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        admin: adminData, // null if not admin
+    };
+};
+
+export const AuthService = { loginUser, getMe };

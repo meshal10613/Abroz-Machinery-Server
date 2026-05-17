@@ -1,21 +1,12 @@
 import { Router } from "express";
-import { login } from "./auth.controller";
 import { authenticate, authorize } from "./auth.middleware";
 import { UserRole } from "../../types/user";
+import { AuthController } from "./auth.controller";
 
 const router = Router();
 
-// Public
-router.post("/login", login);
+router.post("/login", AuthController.login);
 
-// Protected — admin only example
-router.get("/me", authenticate, (req, res) => {
-    res.json({ success: true, data: req.user });
-});
-
-// Protected — admin only
-router.get("/admin-only", authenticate, authorize(UserRole.ADMIN), (req, res) => {
-    res.json({ success: true, message: "Welcome, admin!" });
-});
+router.get("/me", authenticate, authorize(UserRole.ADMIN), AuthController.getMe);
 
 export const authRoutes = router;
