@@ -1,6 +1,6 @@
 import mongoose, { Schema, HydratedDocument, SaveOptions } from "mongoose";
 import bcrypt from "bcryptjs";
-import { IUser, UserRole } from '../types/user';
+import { IUser, UserRole } from "../types/user";
 
 const UserSchema = new Schema<IUser>(
     {
