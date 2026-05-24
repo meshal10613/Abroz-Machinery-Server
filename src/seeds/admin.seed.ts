@@ -25,19 +25,9 @@ export const seedAdmin = async (): Promise<void> => {
         await Admin.create({
             user: user._id,
             businessName: "AB & KBROZ MACHINERY INC.",
-            businessPhoneNumber: "+639175100030",
-            facebookPage: {
-                mainPage: "https://facebook.com/abrozmachinery",
-                sparePartsPage:
-                    "https://www.facebook.com/machinerysparepartsph",
-            },
-            businessDescription:
-                "Abroz Machinery Inc. is a dealer in quality used heavy machinery, specializing in Komatsu excavators and wheel loaders. We source, inspect, and deliver reliable units with transparent history, competitive pricing, and fast support.",
-            businessAddress:
-                "Jose Abad Santos Avenue, San Fernando, Pampanga, San Fernando, Philippines, 2000",
         });
 
-        console.log(`🌱 Admin + Admin Profile seeded: ${env.admin.email}`);
+        console.log(`🌱 Admin Profile seeded: ${env.admin.email}`);
     } catch (error) {
         console.error("❌ Admin seed failed:", error);
         process.exit(1);
