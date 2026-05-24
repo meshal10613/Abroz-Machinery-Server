@@ -1,4 +1,6 @@
 import mongoose, { Schema } from "mongoose";
+import { ProductCondition, ProductStatus } from "../types/product";
+import { DailyStatSchema } from "./stats.model";
 
 const ProductSchema = new Schema(
     {
@@ -8,14 +10,26 @@ const ProductSchema = new Schema(
             trim: true,
         },
 
-        description: {
+        origin: {
             type: String,
-            required: true,
+            trim: true,
         },
 
-        image: {
-            type: String, // URL or file path
+        partNumber: {
+            type: String,
+            trim: true,
+        },
+
+        brandName: {
+            type: String,
+            trim: true,
+        },
+
+        quantity: {
+            type: Number,
             required: true,
+            min: 0,
+            default: 0,
         },
 
         categoryId: {
@@ -24,34 +38,61 @@ const ProductSchema = new Schema(
             required: true,
         },
 
-        price: {
-            type: Number,
+        condition: {
+            type: String,
+            enum: Object.values(ProductCondition),
             required: true,
         },
 
-        salePrice: {
-            type: Number,
-            default: 0,
-        },
-
-        onSale: {
-            type: Boolean,
-            default: false,
-        },
-
-        quantity: {
-            type: Number,
-            default: 1,
-        },
-
-        brand: {
+        compatibility: {
             type: String,
-            trim: true,
+        },
+
+        description: {
+            type: String,
+            required: true,
         },
 
         features: {
-            type: [String], // array of features
+            type: [String],
             default: [],
+        },
+
+        shippingInfo: {
+            type: String,
+        },
+
+        conditionNotes: {
+            type: String,
+        },
+
+        images: {
+            type: [String],
+            validate: {
+                validator: function (arr: string) {
+                    return arr.length <= 5;
+                },
+                message: "A product can have a maximum of 5 images.",
+            },
+            default: [],
+        },
+
+        status: {
+            type: String,
+            enum: Object.values(ProductStatus),
+        },
+
+        analytics: {
+            totalClicks: {
+                type: Number,
+                default: 0,
+                min: 0,
+            },
+
+            clicksByDate: {
+                type: [DailyStatSchema],
+                default: [],
+            },
         },
     },
     { timestamps: true },
