@@ -18,14 +18,11 @@ const UserSchema = new Schema<IUser>(
 );
 
 // Hash password before save
-UserSchema.pre(
-    "save",
-    async function (this: HydratedDocument<IUser>, next: SaveOptions) {
-        if (!this.isModified("password")) return next();
-        this.password = await bcrypt.hash(this.password, 10);
-        next();
-    },
-);
+UserSchema.pre("save", async function (this: HydratedDocument<IUser>) {
+    if (!this.isModified("password")) return;
+
+    this.password = await bcrypt.hash(this.password, 10);
+});
 
 // Instance method to compare passwords
 UserSchema.methods.comparePassword = function (candidate: string) {

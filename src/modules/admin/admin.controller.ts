@@ -4,9 +4,9 @@ import { AdminService } from "./admin.service";
 
 const updateAdminProfile = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = req?.user?.userId;
 
-        const result = await AdminService.updateAdminProfile(userId, req.body);
+        const result = await AdminService.updateAdminProfile(userId as string, req.body);
 
         sendSuccess(res, "Admin profile updated successfully", result);
     } catch (error: any) {
@@ -16,9 +16,9 @@ const updateAdminProfile = async (req: Request, res: Response) => {
 
 const getAdminProfile = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = req?.user?.userId;
 
-        const result = await AdminService.getAdminProfile(userId);
+        const result = await AdminService.getAdminProfile(userId as string);
 
         sendSuccess(res, "Admin profile fetched successfully", result);
     } catch (error: any) {

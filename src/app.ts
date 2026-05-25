@@ -1,17 +1,19 @@
-import express, { Application } from 'express';
-import router from './routes';
-import { notFound } from './middlewares/notFound';
+import router from "./routes";
+import { notFound } from "./middlewares/notFound";
+import express, { Request, Response } from "express";
 
-const app: Application = express();
+const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Mount modules
-app.use('/api/v1', router);
+app.use("/api/v1", router);
 
 // Health check
-app.get('/health', (_, res) => res.json({ status: 'ok' }));
+app.get("/health", (_: Request, res: Response) => {
+    res.json({ status: "ok" });
+});
 
 // app.use(globalErrorHandler);
 app.use(notFound);

@@ -38,7 +38,10 @@ const updateCategory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const result = await CategoryService.updateCategory(id as string, req.body);
+        const result = await CategoryService.updateCategory(
+            id as string,
+            req.body,
+        );
 
         sendSuccess(res, "Category updated successfully", result);
     } catch (error: any) {
