@@ -1,6 +1,6 @@
 import { UserRole } from "./user";
 
-export interface JwtPayload {
+export interface IRequestUser {
     userId: string;
     role: UserRole;
     email: string;
@@ -10,7 +10,7 @@ export interface JwtPayload {
 declare global {
     namespace Express {
         interface Request {
-            user?: JwtPayload;
+            user?: IRequestUser;
         }
     }
 }

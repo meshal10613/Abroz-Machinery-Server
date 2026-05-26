@@ -1,31 +1,36 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { JwtPayload } from "../../types";
 import { sendError } from "../../utils/response";
 import { env } from "../../config/env";
 import { UserRole } from "../../types/user";
+import { CookieUtils } from "../../utils/cookie";
+import { jwtUtils } from "../../utils/jwt";
 
 export const authenticate = (
     req: Request,
     res: Response,
     next: NextFunction,
 ): void => {
-    const authHeader = req.headers.authorization;
+    const token = CookieUtils.getCookie(req, "token");
 
-    if (!authHeader?.startsWith("Bearer ")) {
-        sendError(res, "No token provided.", 401);
+    if (!token) {
+        sendError(res, "Authentication required.", 401);
         return;
     }
 
-    const token = authHeader.split(" ")[1];
+    const verified = jwtUtils.verifyToken(token, env.jwtSecret);
 
-    try {
-        const decoded = jwt.verify(token, env.jwtSecret) as JwtPayload;
-        req.user = decoded;
-        next();
-    } catch {
+    if (!verified.success) {
         sendError(res, "Invalid or expired token.", 401);
+        return;
     }
+
+    req.user = {
+        userId: verified?.data?.userId,
+        role: verified?.data?.role,
+        email: verified?.data?.email,
+    };
+
+    next();
 };
 
 // Role-based guard factory

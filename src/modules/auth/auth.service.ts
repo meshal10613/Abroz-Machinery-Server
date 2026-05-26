@@ -1,32 +1,37 @@
 import jwt from "jsonwebtoken";
 import { User } from "../../models/user.model";
-import { JwtPayload } from "../../types";
 import { env } from "../../config/env";
 import { LoginInput, LoginResult } from "./auth.interface";
 import { UserRole } from "../../types/user";
 import { Admin } from "../../models/admin.model";
+import { tokenUtils } from "../../utils/token";
+import { IRequestUser } from "../../types";
 
-const loginUser = async (input: LoginInput): Promise<LoginResult> => {
+const loginUser = async (input: LoginInput) => {
     const { email, password } = input;
 
-    // 1. Find user
-    const user = await User.findOne({ email, isActive: true });
-    if (!user) throw new Error("Invalid email or password.");
+    const user = await User.findOne({
+        email,
+        isActive: true,
+    });
 
-    // 2. Verify password
+    if (!user) {
+        throw new Error("Invalid email or password.");
+    }
+
     const isMatch = await user.comparePassword(password);
-    if (!isMatch) throw new Error("Invalid email or password.");
 
-    // 3. Sign JWT
-    const payload: JwtPayload = {
+    if (!isMatch) {
+        throw new Error("Invalid email or password.");
+    }
+
+    const payload: IRequestUser = {
         userId: user._id.toString(),
-        role: user.role,
         email: user.email,
+        role: user.role,
     };
 
-    const token = jwt.sign(payload, env.jwtSecret, {
-        expiresIn: env.jwtExpiresIn as jwt.SignOptions["expiresIn"],
-    });
+    const token = tokenUtils.getToken(payload);
 
     return {
         token,
@@ -35,6 +40,7 @@ const loginUser = async (input: LoginInput): Promise<LoginResult> => {
             name: user.name,
             email: user.email,
             role: user.role,
+            isActive: user.isActive,
         },
     };
 };

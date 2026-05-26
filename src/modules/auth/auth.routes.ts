@@ -10,13 +10,16 @@ import { authValidation } from "./auth.validation";
 
 const router = Router();
 
-router.post("/login", AuthController.login);
+router.post(
+    "/login",
+    zodValidate(authValidation.loginSchema, validationProperty.BODY),
+    AuthController.login,
+);
 
 router.get(
     "/me",
     authenticate,
     authorize(UserRole.ADMIN),
-    zodValidate(authValidation.loginSchema, validationProperty.BODY),
     AuthController.getMe,
 );
 

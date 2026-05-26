@@ -1,9 +1,11 @@
 import router from "./routes";
 import { notFound } from "./middlewares/notFound";
 import express, { Request, Response } from "express";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
