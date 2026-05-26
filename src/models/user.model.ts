@@ -1,4 +1,4 @@
-import mongoose, { Schema, HydratedDocument, SaveOptions } from "mongoose";
+import mongoose, { Schema, HydratedDocument } from "mongoose";
 import bcrypt from "bcryptjs";
 import { IUser, UserRole } from "../types/user";
 
