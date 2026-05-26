@@ -26,8 +26,6 @@ const createProductSchema = z.object({
 
     conditionNotes: z.string().optional(),
 
-    images: z.array(z.string().url()).max(5).optional(),
-
     status: z.nativeEnum(ProductStatus).optional(),
 });
 

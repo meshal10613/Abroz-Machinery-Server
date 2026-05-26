@@ -1,62 +1,77 @@
 import { Request, Response } from "express";
-import { sendSuccess, sendError } from "../../utils/response";
+import { catchAsync } from "../../shared/catchAsync";
+import { sendResponse } from "../../shared/sendResponse";
 import { ProductService } from "./product.service";
 
-const createProduct = async (req: Request, res: Response) => {
-    try {
-        const result = await ProductService.createProduct(req.body);
-
-        sendSuccess(res, "Product created successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to create product", 400);
+const createProduct = catchAsync(async (req: Request, res: Response) => {
+    const payload = req.body;
+    if (req.files && Array.isArray(req.files)) {
+        payload.images = (req.files as Express.Multer.File[]).map(
+            (file) => file.path,
+        );
     }
-};
+    const result = await ProductService.createProduct(payload);
 
-const getAllProducts = async (_req: Request, res: Response) => {
-    try {
-        const result = await ProductService.getAllProducts();
+    sendResponse(res, {
+        httpStatusCode: 201,
+        success: true,
+        message: "Product created successfully",
+        data: result,
+    });
+});
 
-        sendSuccess(res, "Products fetched successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to fetch products", 400);
-    }
-};
+const getAllProducts = catchAsync(async (_req: Request, res: Response) => {
+    const result = await ProductService.getAllProducts();
 
-const getSingleProduct = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Products fetched successfully",
+        data: result,
+    });
+});
 
-        const result = await ProductService.getSingleProduct(id as string);
+const getSingleProduct = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        sendSuccess(res, "Product fetched successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to fetch product", 400);
-    }
-};
+    const result = await ProductService.getSingleProduct(id as string);
 
-const updateProduct = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Product fetched successfully",
+        data: result,
+    });
+});
 
-        const result = await ProductService.updateProduct(id as string, req.body);
+const updateProduct = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        sendSuccess(res, "Product updated successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to update product", 400);
-    }
-};
+    const result = await ProductService.updateProduct(
+        id as string,
+        req.body,
+    );
 
-const deleteProduct = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Product updated successfully",
+        data: result,
+    });
+});
 
-        const result = await ProductService.deleteProduct(id as string);
+const deleteProduct = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        sendSuccess(res, "Product deleted successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to delete product", 400);
-    }
-};
+    const result = await ProductService.deleteProduct(id as string);
+
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Product deleted successfully",
+        data: result,
+    });
+});
 
 export const ProductController = {
     createProduct,

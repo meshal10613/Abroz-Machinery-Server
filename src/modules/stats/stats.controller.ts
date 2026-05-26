@@ -1,17 +1,19 @@
 import { Request, Response } from "express";
-import { sendError, sendSuccess } from "../../utils/response";
+import { catchAsync } from "../../shared/catchAsync";
+import { sendResponse } from "../../shared/sendResponse";
 import { StatsService } from "./stats.service";
 
-const getDashboardStats = async (req: Request, res: Response) => {
-    try {
-        const result = await StatsService.getDashboardStats();
+const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await StatsService.getDashboardStats();
 
-        sendSuccess(res, "Dashboard stats fetched successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to fetch dashboard stats", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Dashboard stats fetched successfully",
+        data: result,
+    });
+});
 
 export const StatsController = {
-	getDashboardStats,
+    getDashboardStats,
 };

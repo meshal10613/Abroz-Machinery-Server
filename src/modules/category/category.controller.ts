@@ -1,65 +1,71 @@
 import { Request, Response } from "express";
-import { sendSuccess, sendError } from "../../utils/response";
+import { catchAsync } from "../../shared/catchAsync";
+import { sendResponse } from "../../shared/sendResponse";
 import { CategoryService } from "./category.service";
 
-const createCategory = async (req: Request, res: Response) => {
-    try {
-        const result = await CategoryService.createCategory(req.body);
+const createCategory = catchAsync(async (req: Request, res: Response) => {
+    const result = await CategoryService.createCategory(req.body);
 
-        sendSuccess(res, "Category created successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to create category", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 201,
+        success: true,
+        message: "Category created successfully",
+        data: result,
+    });
+});
 
-const getAllCategories = async (_req: Request, res: Response) => {
-    try {
-        const result = await CategoryService.getAllCategories();
+const getAllCategories = catchAsync(async (_req: Request, res: Response) => {
+    const result = await CategoryService.getAllCategories();
 
-        sendSuccess(res, "Categories fetched successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to fetch categories", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Categories fetched successfully",
+        data: result,
+    });
+});
 
-const getSingleCategory = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
+const getSingleCategory = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        const result = await CategoryService.getSingleCategory(id as string);
+    const result = await CategoryService.getSingleCategory(id as string);
 
-        sendSuccess(res, "Category fetched successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to fetch category", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Category fetched successfully",
+        data: result,
+    });
+});
 
-const updateCategory = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
+const updateCategory = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        const result = await CategoryService.updateCategory(
-            id as string,
-            req.body,
-        );
+    const result = await CategoryService.updateCategory(
+        id as string,
+        req.body,
+    );
 
-        sendSuccess(res, "Category updated successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to update category", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Category updated successfully",
+        data: result,
+    });
+});
 
-const deleteCategory = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
+const deleteCategory = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
 
-        const result = await CategoryService.deleteCategory(id as string);
+    const result = await CategoryService.deleteCategory(id as string);
 
-        sendSuccess(res, "Category deleted successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to delete category", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Category deleted successfully",
+        data: result,
+    });
+});
 
 export const CategoryController = {
     createCategory,

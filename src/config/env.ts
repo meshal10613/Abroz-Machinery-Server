@@ -11,4 +11,9 @@ export const env = {
         password: process.env.ADMIN_PASSWORD as string,
         name: process.env.ADMIN_NAME as string,
     },
+    cloudinary: {
+        cloudName: process.env.CLOUDINARY_CLOUDE_NAME as string,
+        apiKey: process.env.CLOUDINARY_API_KEY as string,
+        apiSecret: process.env.CLOUDINARY_API_SECRET as string,
+    },
 };

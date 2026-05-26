@@ -1,28 +1,31 @@
 import { Request, Response } from "express";
-import { sendSuccess, sendError } from "../../utils/response";
+import { catchAsync } from "../../shared/catchAsync";
+import { sendResponse } from "../../shared/sendResponse";
 import { AdminService } from "./admin.service";
 
-const updateAdminProfile = async (req: Request, res: Response) => {
-    try {
-        const userId = req?.user?.userId;
+const updateAdminProfile = catchAsync(async (req: Request, res: Response) => {
+    const userId = req?.user?.userId;
 
-        const result = await AdminService.updateAdminProfile(userId as string, req.body);
+    const result = await AdminService.updateAdminProfile(userId as string, req.body);
 
-        sendSuccess(res, "Admin profile updated successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to update admin profile", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Admin profile updated successfully",
+        data: result,
+    });
+});
 
-const updateAdminClicks = async (req: Request, res: Response) => {
-    try {
-        const result = await AdminService.updateAdminClicks(req.body);
+const updateAdminClicks = catchAsync(async (req: Request, res: Response) => {
+    const result = await AdminService.updateAdminClicks(req.body);
 
-        sendSuccess(res, "Click tracked successfully", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to track click", 400);
-    }
-};
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: "Click tracked successfully",
+        data: result,
+    });
+});
 
 export const AdminController = {
     updateAdminProfile,

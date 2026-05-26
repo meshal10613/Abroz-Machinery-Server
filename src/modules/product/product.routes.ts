@@ -7,6 +7,7 @@ import {
     validationProperty,
     zodValidate,
 } from "../../middlewares/zodValidation";
+import { multerUpload } from "../../config/multer";
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.post(
     "/",
     authenticate,
     authorize(UserRole.ADMIN),
+    multerUpload.array("images", 5),
     zodValidate(productValidation.createProductSchema, validationProperty.BODY),
     ProductController.createProduct,
 );
