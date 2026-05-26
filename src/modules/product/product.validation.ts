@@ -1,28 +1,41 @@
 import { z } from "zod";
+import { ProductCondition, ProductStatus } from "../../types/product";
 
 const createProductSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    description: z.string().min(1, "Description is required"),
-    image: z.string().url("Invalid image URL"),
-    categoryId: z.string().min(1, "Category is required"),
+    name: z.string().min(1),
 
-    price: z.number().min(0),
+    origin: z.string().optional(),
 
-    salePrice: z.number().optional(),
+    partNumber: z.string().optional(),
 
-    onSale: z.boolean().optional(),
+    brandName: z.string().optional(),
 
-    quantity: z.number().int().min(0).optional(),
+    quantity: z.number().int().min(0),
 
-    brand: z.string().optional(),
+    categoryId: z.string().min(1),
+
+    condition: z.nativeEnum(ProductCondition),
+
+    compatibility: z.string().optional(),
+
+    description: z.string().min(1),
 
     features: z.array(z.string()).optional(),
+
+    shippingInfo: z.string().optional(),
+
+    conditionNotes: z.string().optional(),
+
+    images: z.array(z.string().url()).max(5).optional(),
+
+    status: z.nativeEnum(ProductStatus).optional(),
 });
 
 const updateProductSchema = createProductSchema
     .partial()
     .refine((data) => Object.keys(data).length > 0 || true, {
-        message: "At least one field must be provided for update",
+        message:
+            "At least one field must be provided for update",
     });
 
 export const productValidation = {

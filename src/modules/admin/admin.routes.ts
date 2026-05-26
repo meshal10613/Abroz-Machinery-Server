@@ -10,21 +10,19 @@ import { adminValidation } from "./admin.validation";
 
 const router = Router();
 
-// Get admin profile (admin only)
-router.get(
-    "/me",
-    authenticate,
-    authorize(UserRole.ADMIN),
-    AdminController.getAdminProfile,
-);
-
 // Update admin profile (admin only)
 router.patch(
-    "/me",
+    "/profile",
     authenticate,
     authorize(UserRole.ADMIN),
     zodValidate(adminValidation.updateAdminSchema, validationProperty.BODY),
     AdminController.updateAdminProfile,
+);
+
+router.patch(
+    "/clicks",
+    zodValidate(adminValidation.updateClickSchema, validationProperty.BODY),
+    AdminController.updateAdminClicks,
 );
 
 export const adminRoutes = router;

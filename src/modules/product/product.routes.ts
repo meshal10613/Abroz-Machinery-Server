@@ -25,9 +25,6 @@ router.get("/", ProductController.getAllProducts);
 // Get single product
 router.get("/:id", ProductController.getSingleProduct);
 
-// Get products by category
-router.get("/category/:categoryId", ProductController.getByCategory);
-
 // Update product (admin only)
 router.patch(
     "/:id",

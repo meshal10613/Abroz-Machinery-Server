@@ -14,19 +14,17 @@ const updateAdminProfile = async (req: Request, res: Response) => {
     }
 };
 
-const getAdminProfile = async (req: Request, res: Response) => {
+const updateAdminClicks = async (req: Request, res: Response) => {
     try {
-        const userId = req?.user?.userId;
+        const result = await AdminService.updateAdminClicks(req.body);
 
-        const result = await AdminService.getAdminProfile(userId as string);
-
-        sendSuccess(res, "Admin profile fetched successfully", result);
+        sendSuccess(res, "Click tracked successfully", result);
     } catch (error: any) {
-        sendError(res, error.message || "Failed to fetch admin profile", 400);
+        sendError(res, error.message || "Failed to track click", 400);
     }
 };
 
 export const AdminController = {
     updateAdminProfile,
-    getAdminProfile,
+    updateAdminClicks,
 };

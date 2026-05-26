@@ -58,23 +58,10 @@ const deleteProduct = async (req: Request, res: Response) => {
     }
 };
 
-const getByCategory = async (req: Request, res: Response) => {
-    try {
-        const { categoryId } = req.params;
-
-        const result = await ProductService.getProductsByCategory(categoryId as string);
-
-        sendSuccess(res, "Products fetched by category", result);
-    } catch (error: any) {
-        sendError(res, error.message || "Failed to fetch products", 400);
-    }
-};
-
 export const ProductController = {
     createProduct,
     getAllProducts,
     getSingleProduct,
     updateProduct,
     deleteProduct,
-    getByCategory,
 };

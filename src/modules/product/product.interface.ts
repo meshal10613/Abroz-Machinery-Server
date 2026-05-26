@@ -1,25 +1,20 @@
+import { ProductCondition, ProductStatus } from "../../types/product";
+
 export interface CreateProductInput {
     name: string;
-    description: string;
-    image: string;
+    origin?: string;
+    partNumber?: string;
+    brandName?: string;
+    quantity: number;
     categoryId: string;
-    price: number;
-    salePrice?: number;
-    onSale?: boolean;
-    quantity?: number;
-    brand?: string;
+    condition: ProductCondition;
+    compatibility?: string;
+    description: string;
     features?: string[];
+    shippingInfo?: string;
+    conditionNotes?: string;
+    images?: string[];
+    status?: ProductStatus;
 }
 
-export interface UpdateProductInput {
-    name?: string;
-    description?: string;
-    image?: string;
-    categoryId?: string;
-    price?: number;
-    salePrice?: number;
-    onSale?: boolean;
-    quantity?: number;
-    brand?: string;
-    features?: string[];
-}
+export interface UpdateProductInput extends Partial<CreateProductInput> {}
