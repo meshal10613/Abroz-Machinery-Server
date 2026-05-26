@@ -1,3 +1,5 @@
+import { logActivity } from "../../helper/activity.helper";
+import { ActivityMethod } from "../../models/activity.model";
 import { Admin } from "../../models/admin.model";
 import { UpdateAdminInput, UpdateClickInput } from "./admin.interface";
 
@@ -28,6 +30,10 @@ const updateAdminProfile = async (userId: string, input: UpdateAdminInput) => {
     }
 
     await admin.save();
+    await logActivity(
+        ActivityMethod.UPDATE,
+        `Updated business profile information`,
+    );
 
     return admin;
 };

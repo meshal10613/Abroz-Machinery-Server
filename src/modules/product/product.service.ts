@@ -1,8 +1,14 @@
+import { logActivity } from "../../helper/activity.helper";
+import { ActivityMethod } from "../../models/activity.model";
 import { Product } from "../../models/product.model";
 import { CreateProductInput, UpdateProductInput } from "./product.interface";
 
 const createProduct = async (input: CreateProductInput) => {
     const product = await Product.create(input);
+    await logActivity(
+        ActivityMethod.CREATE,
+        `Created product: ${product.name}`,
+    );
     return product;
 };
 
@@ -50,6 +56,12 @@ const updateProduct = async (id: string, input: UpdateProductInput) => {
     }).populate("categoryId");
 
     if (!product) throw new Error("Product not found");
+
+    await logActivity(
+        ActivityMethod.UPDATE,
+        `Updated product: ${product.name}`,
+    );
+
     return product;
 };
 
@@ -57,6 +69,11 @@ const deleteProduct = async (id: string) => {
     const product = await Product.findByIdAndDelete(id);
 
     if (!product) throw new Error("Product not found");
+
+    await logActivity(
+        ActivityMethod.DELETE,
+        `Deleted product: ${product.name}`,
+    );
 
     return { message: "Product deleted successfully" };
 };

@@ -1,7 +1,5 @@
-import jwt from "jsonwebtoken";
 import { User } from "../../models/user.model";
-import { env } from "../../config/env";
-import { LoginInput, LoginResult } from "./auth.interface";
+import { LoginInput } from "./auth.interface";
 import { UserRole } from "../../types/user";
 import { Admin } from "../../models/admin.model";
 import { tokenUtils } from "../../utils/token";

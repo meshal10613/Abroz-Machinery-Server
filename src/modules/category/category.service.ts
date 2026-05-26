@@ -1,3 +1,5 @@
+import { logActivity } from "../../helper/activity.helper";
+import { ActivityMethod } from "../../models/activity.model";
 import { Category } from "../../models/category.model";
 import { CreateCategoryInput, UpdateCategoryInput } from "./category.interface";
 
@@ -6,6 +8,10 @@ const createCategory = async (input: CreateCategoryInput) => {
     if (existing) throw new Error("Category already exists");
 
     const category = await Category.create(input);
+    await logActivity(
+        ActivityMethod.CREATE,
+        `Created category: ${category.name}`,
+    );
     return category;
 };
 
@@ -25,12 +31,21 @@ const updateCategory = async (id: string, input: UpdateCategoryInput) => {
     });
 
     if (!category) throw new Error("Category not found");
+    await logActivity(
+        ActivityMethod.UPDATE,
+        `Updated category: ${category.name}}`,
+    );
     return category;
 };
 
 const deleteCategory = async (id: string) => {
     const category = await Category.findByIdAndDelete(id);
     if (!category) throw new Error("Category not found");
+
+    await logActivity(
+        ActivityMethod.DELETE,
+        `Deleted category: ${category.name}`,
+    );
 
     return { message: "Category deleted successfully" };
 };
