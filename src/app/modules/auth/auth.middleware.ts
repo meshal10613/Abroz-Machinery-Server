@@ -1,9 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
-import { sendError } from "../../app/utils/response";
+import { CookieUtils } from "../../utils/cookie";
+import { jwtUtils } from "../../utils/jwt";
 import { env } from "../../config/env";
-import { UserRole } from "../../app/types/user";
-import { CookieUtils } from "../../app/utils/cookie";
-import { jwtUtils } from "../../app/utils/jwt";
+import AppError from "../../helper/AppError";
+import { UserRole } from "../../types/user";
+import status from "http-status";
 
 export const authenticate = (
     req: Request,
@@ -13,14 +14,14 @@ export const authenticate = (
     const token = CookieUtils.getCookie(req, "token");
 
     if (!token) {
-        sendError(res, "Authentication required.", 401);
+        throw new AppError(status.UNAUTHORIZED, "Authentication required.");
         return;
     }
 
     const verified = jwtUtils.verifyToken(token, env.jwtSecret);
 
     if (!verified.success) {
-        sendError(res, "Invalid or expired token.", 401);
+        throw new AppError(status.UNAUTHORIZED, "Invalid or expired token.");
         return;
     }
 
@@ -38,7 +39,7 @@ export const authorize =
     (...roles: UserRole[]) =>
     (req: Request, res: Response, next: NextFunction): void => {
         if (!req.user || !roles.includes(req.user.role)) {
-            sendError(res, "Access denied.", 403);
+            throw new AppError(status.FORBIDDEN, "Access denied.");
             return;
         }
         next();

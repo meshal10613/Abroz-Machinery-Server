@@ -1,9 +1,9 @@
-import { User } from "../../models/user.model";
-import { LoginInput } from "./auth.interface";
-import { UserRole } from "../../app/types/user";
 import { Admin } from "../../models/admin.model";
-import { tokenUtils } from "../../app/utils/token";
-import { IRequestUser } from "../../app/types";
+import { User } from "../../models/user.model";
+import { IRequestUser } from "../../types";
+import { UserRole } from "../../types/user";
+import { tokenUtils } from "../../utils/token";
+import { LoginInput } from "./auth.interface";
 
 const loginUser = async (input: LoginInput) => {
     const { email, password } = input;

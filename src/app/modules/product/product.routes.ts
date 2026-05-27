@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware";
-import { UserRole } from "../../app/types/user";
 import { ProductController } from "./product.controller";
 import { productValidation } from "./product.validation";
 import {
@@ -8,6 +7,7 @@ import {
     zodValidate,
 } from "../../middlewares/zodValidation";
 import { multerUpload } from "../../config/multer";
+import { UserRole } from "../../types/user";
 
 const router = Router();
 
