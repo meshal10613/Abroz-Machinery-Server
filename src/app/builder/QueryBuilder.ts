@@ -1,13 +1,13 @@
-import { Model, PopulateOptions } from "mongoose";
+import { Model, PopulateOptions, QueryFilter } from "mongoose";
 import { QueryBuilderOptions, QueryResult } from "../types/query";
 
 export class QueryBuilder<T> {
     private model: Model<T>;
     private query: Record<string, any>;
     private searchFields: (keyof T | string)[];
-    private filterConditions: Record<string, any> = {};
+    private filterConditions: QueryFilter<T> = {};
     private populateOptions: PopulateOptions[] = [];
-    private selectFields: string = "";
+    private selectFields = "";
 
     constructor({ model, query, searchFields = [] }: QueryBuilderOptions<T>) {
         this.model = model;
@@ -20,8 +20,11 @@ export class QueryBuilder<T> {
 
         if (searchTerm && this.searchFields.length > 0) {
             this.filterConditions.$or = this.searchFields.map((field) => ({
-                [field]: { $regex: searchTerm, $options: "i" },
-            }));
+                [field]: {
+                    $regex: searchTerm,
+                    $options: "i",
+                },
+            })) as QueryFilter<T>["$or"];
         }
 
         return this;
@@ -38,7 +41,7 @@ export class QueryBuilder<T> {
             ...excludeFields,
         ];
 
-        const rawFilters = { ...this.query };
+        const rawFilters: Record<string, any> = { ...this.query };
 
         reserved.forEach((key) => delete rawFilters[key]);
 
@@ -47,17 +50,21 @@ export class QueryBuilder<T> {
         Object.entries(rawFilters).forEach(([key, value]) => {
             if (key.startsWith("min")) {
                 const field = key.charAt(3).toLowerCase() + key.slice(4);
+
                 rangeFilters[field] = {
                     ...rangeFilters[field],
                     $gte: Number(value),
                 };
+
                 delete rawFilters[key];
             } else if (key.startsWith("max")) {
                 const field = key.charAt(3).toLowerCase() + key.slice(4);
+
                 rangeFilters[field] = {
                     ...rangeFilters[field],
                     $lte: Number(value),
                 };
+
                 delete rawFilters[key];
             }
         });
@@ -66,7 +73,7 @@ export class QueryBuilder<T> {
             ...this.filterConditions,
             ...rawFilters,
             ...rangeFilters,
-        };
+        } as QueryFilter<T>;
 
         return this;
     }
@@ -91,6 +98,7 @@ export class QueryBuilder<T> {
             100,
             Math.max(1, parseInt(this.query.limit) || 10),
         );
+
         const skip = (page - 1) * limit;
 
         const sortField = this.query.sort || "createdAt";

@@ -1,7 +1,12 @@
+import { QueryBuilder } from "../../builder/QueryBuilder";
 import { logActivity } from "../../helper/activity.helper";
 import { ActivityMethod } from "../../models/activity.model";
 import { Category } from "../../models/category.model";
-import { CreateCategoryInput, UpdateCategoryInput } from "./category.interface";
+import {
+    CategoryQuery,
+    CreateCategoryInput,
+    UpdateCategoryInput,
+} from "./category.interface";
 
 const createCategory = async (input: CreateCategoryInput) => {
     const existing = await Category.findOne({ name: input.name });
@@ -15,8 +20,16 @@ const createCategory = async (input: CreateCategoryInput) => {
     return category;
 };
 
-const getAllCategories = async () => {
-    return await Category.find().sort({ createdAt: -1 });
+const getAllCategories = async (query: CategoryQuery) => {
+    return new QueryBuilder({
+        model: Category,
+        query,
+        searchFields: ["name"],
+    })
+        .search()
+        .filter()
+        .fields()
+        .paginate();
 };
 
 const getSingleCategory = async (id: string) => {

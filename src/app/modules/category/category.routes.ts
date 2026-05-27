@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware";
-import { UserRole } from "../../app/types/user";
 import { CategoryController } from "./category.controller";
 import { validationProperty, zodValidate } from "../../middlewares/zodValidation";
 import { categoryValidation } from "./category.validation";
+import { UserRole } from "../../types/user";
 
 const router = Router();
 

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CategoryService } from "./category.service";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
+import { CategoryQuery } from "./category.interface";
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
     const result = await CategoryService.createCategory(req.body);
@@ -14,8 +15,10 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const getAllCategories = catchAsync(async (_req: Request, res: Response) => {
-    const result = await CategoryService.getAllCategories();
+const getAllCategories = catchAsync(async (req: Request, res: Response) => {
+    const result = await CategoryService.getAllCategories(
+        req.query as CategoryQuery,
+    );
 
     sendResponse(res, {
         httpStatusCode: 200,
@@ -41,10 +44,7 @@ const getSingleCategory = catchAsync(async (req: Request, res: Response) => {
 const updateCategory = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const result = await CategoryService.updateCategory(
-        id as string,
-        req.body,
-    );
+    const result = await CategoryService.updateCategory(id as string, req.body);
 
     sendResponse(res, {
         httpStatusCode: 200,
