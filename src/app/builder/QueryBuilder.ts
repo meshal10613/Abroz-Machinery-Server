@@ -1,80 +1,151 @@
-import { Query } from "mongoose";
+import { Model, PopulateOptions } from "mongoose";
+import { QueryBuilderOptions, QueryResult } from "../types/query";
 
 export class QueryBuilder<T> {
-    constructor(
-        public modelQuery: Query<T[], T>,
-        public query: Record<string, any>,
-    ) {}
+    private model: Model<T>;
+    private query: Record<string, any>;
+    private searchFields: (keyof T | string)[];
+    private filterConditions: Record<string, any> = {};
+    private populateOptions: PopulateOptions[] = [];
+    private selectFields: string = "";
 
-    search(fields: string[]) {
-        const searchTerm = this.query.searchTerm;
+    constructor({ model, query, searchFields = [] }: QueryBuilderOptions<T>) {
+        this.model = model;
+        this.query = query;
+        this.searchFields = searchFields;
+    }
 
-        if (searchTerm) {
-            this.modelQuery = this.modelQuery.find({
-                $or: fields.map((field) => ({
-                    [field]: {
-                        $regex: searchTerm,
-                        $options: "i",
-                    },
-                })),
-            });
+    search(): this {
+        const searchTerm = this.query.search;
+
+        if (searchTerm && this.searchFields.length > 0) {
+            this.filterConditions.$or = this.searchFields.map((field) => ({
+                [field]: { $regex: searchTerm, $options: "i" },
+            }));
         }
 
         return this;
     }
 
-    filter() {
-        const queryObj = { ...this.query };
-
-        const excludeFields = [
-            "searchTerm",
+    filter(excludeFields: string[] = []): this {
+        const reserved = [
+            "search",
+            "sort",
+            "order",
             "page",
             "limit",
-            "sortBy",
-            "sortOrder",
+            "fields",
+            ...excludeFields,
         ];
 
-        excludeFields.forEach((el) => delete queryObj[el]);
+        const rawFilters = { ...this.query };
 
-        this.modelQuery = this.modelQuery.find(queryObj);
+        reserved.forEach((key) => delete rawFilters[key]);
+
+        const rangeFilters: Record<string, any> = {};
+
+        Object.entries(rawFilters).forEach(([key, value]) => {
+            if (key.startsWith("min")) {
+                const field = key.charAt(3).toLowerCase() + key.slice(4);
+                rangeFilters[field] = {
+                    ...rangeFilters[field],
+                    $gte: Number(value),
+                };
+                delete rawFilters[key];
+            } else if (key.startsWith("max")) {
+                const field = key.charAt(3).toLowerCase() + key.slice(4);
+                rangeFilters[field] = {
+                    ...rangeFilters[field],
+                    $lte: Number(value),
+                };
+                delete rawFilters[key];
+            }
+        });
+
+        this.filterConditions = {
+            ...this.filterConditions,
+            ...rawFilters,
+            ...rangeFilters,
+        };
 
         return this;
     }
 
-    sort() {
-        const sortBy = this.query.sortBy || "createdAt";
-        const sortOrder = this.query.sortOrder === "asc" ? "" : "-";
+    populate(options: PopulateOptions | PopulateOptions[]): this {
+        const normalized = Array.isArray(options) ? options : [options];
+        this.populateOptions.push(...normalized);
+        return this;
+    }
 
-        this.modelQuery = this.modelQuery.sort(`${sortOrder}${sortBy}`);
+    fields(): this {
+        if (this.query.fields) {
+            this.selectFields = this.query.fields.split(",").join(" ");
+        }
 
         return this;
     }
 
-    paginate() {
-        const page = Number(this.query.page) || 1;
-        const limit = Number(this.query.limit) || 10;
-
+    async paginate(): Promise<QueryResult<T>> {
+        const page = Math.max(1, parseInt(this.query.page) || 1);
+        const limit = Math.min(
+            100,
+            Math.max(1, parseInt(this.query.limit) || 10),
+        );
         const skip = (page - 1) * limit;
 
-        this.modelQuery = this.modelQuery.skip(skip).limit(limit);
+        const sortField = this.query.sort || "createdAt";
+        const sortOrder = this.query.order === "asc" ? 1 : -1;
 
-        return this;
-    }
+        let dbQuery = this.model
+            .find(this.filterConditions)
+            .sort({ [sortField]: sortOrder })
+            .skip(skip)
+            .limit(limit);
 
-    async countTotal() {
-        const queryObj = { ...this.query };
+        if (this.selectFields) {
+            dbQuery = dbQuery.select(this.selectFields);
+        }
 
-        ["searchTerm", "page", "limit", "sortBy", "sortOrder"].forEach(
-            (field) => delete queryObj[field],
-        );
+        for (const pop of this.populateOptions) {
+            dbQuery = dbQuery.populate(pop) as typeof dbQuery;
+        }
 
-        const total = await this.modelQuery.model.countDocuments(queryObj);
+        const [data, total] = await Promise.all([
+            dbQuery.lean().exec(),
+            this.model.countDocuments(this.filterConditions),
+        ]);
+
+        const totalPages = Math.ceil(total / limit);
 
         return {
-            page: Number(this.query.page) || 1,
-            limit: Number(this.query.limit) || 10,
-            total,
-            totalPages: Math.ceil(total / (Number(this.query.limit) || 10)),
+            data: data as T[],
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            },
         };
+    }
+
+    async exec(): Promise<T[]> {
+        const sortField = this.query.sort || "createdAt";
+        const sortOrder = this.query.order === "asc" ? 1 : -1;
+
+        let dbQuery = this.model
+            .find(this.filterConditions)
+            .sort({ [sortField]: sortOrder });
+
+        if (this.selectFields) {
+            dbQuery = dbQuery.select(this.selectFields);
+        }
+
+        for (const pop of this.populateOptions) {
+            dbQuery = dbQuery.populate(pop) as typeof dbQuery;
+        }
+
+        return dbQuery.lean().exec() as Promise<T[]>;
     }
 }
