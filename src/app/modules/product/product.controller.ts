@@ -20,14 +20,15 @@ const createProduct = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const getAllProducts = catchAsync(async (_req: Request, res: Response) => {
-    const result = await ProductService.getAllProducts();
+const getAllProducts = catchAsync(async (req: Request, res: Response) => {
+    const result = await ProductService.getAllProducts(req.query);
 
     sendResponse(res, {
         httpStatusCode: 200,
         success: true,
         message: "Products fetched successfully",
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 

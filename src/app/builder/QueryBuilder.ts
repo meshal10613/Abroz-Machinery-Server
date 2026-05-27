@@ -78,9 +78,17 @@ export class QueryBuilder<T> {
         return this;
     }
 
-    populate(options: PopulateOptions | PopulateOptions[]): this {
+    populate(
+        options: string | PopulateOptions | (string | PopulateOptions)[],
+    ): this {
         const normalized = Array.isArray(options) ? options : [options];
-        this.populateOptions.push(...normalized);
+
+        this.populateOptions.push(
+            ...normalized.map((item) =>
+                typeof item === "string" ? { path: item } : item,
+            ),
+        );
+
         return this;
     }
 
@@ -157,3 +165,19 @@ export class QueryBuilder<T> {
         return dbQuery.lean().exec() as Promise<T[]>;
     }
 }
+
+//? For populate options, you can use it like this:
+// 1-> .populate("categoryId")
+
+// 2-> .populate({
+//     path: "categoryId",
+//     select: "name",
+// })
+
+// 3-> .populate([
+//     "categoryId",
+//     {
+//         path: "userId",
+//         select: "name email",
+//     },
+// ])

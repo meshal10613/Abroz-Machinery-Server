@@ -1,7 +1,12 @@
+import { QueryBuilder } from "../../builder/queryBuilder";
 import { logActivity } from "../../helper/activity.helper";
 import { ActivityMethod } from "../../models/activity.model";
 import { Product } from "../../models/product.model";
-import { CreateProductInput, UpdateProductInput } from "./product.interface";
+import {
+    CreateProductInput,
+    ProductsQuery,
+    UpdateProductInput,
+} from "./product.interface";
 
 const createProduct = async (input: CreateProductInput) => {
     const product = await Product.create(input);
@@ -12,8 +17,17 @@ const createProduct = async (input: CreateProductInput) => {
     return product;
 };
 
-const getAllProducts = async () => {
-    return await Product.find().populate("categoryId").sort({ createdAt: -1 });
+const getAllProducts = async (query: ProductsQuery) => {
+    return new QueryBuilder({
+        model: Product,
+        query,
+        searchFields: ["name", "origin", "brandName", "partNumber"],
+    })
+        .search()
+        .filter()
+        .populate({ path: "categoryId" })
+        .fields()
+        .paginate();
 };
 
 const getSingleProduct = async (id: string) => {

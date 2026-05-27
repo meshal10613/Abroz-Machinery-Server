@@ -1,4 +1,4 @@
-import { QueryBuilder } from "../../builder/QueryBuilder";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import { logActivity } from "../../helper/activity.helper";
 import { ActivityMethod } from "../../models/activity.model";
 import { Category } from "../../models/category.model";

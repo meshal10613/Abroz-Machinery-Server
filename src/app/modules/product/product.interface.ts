@@ -1,4 +1,4 @@
-import { ProductCondition, ProductStatus } from "../../app/types/product";
+import { ProductCondition, ProductStatus } from "../../types/product";
 
 export interface CreateProductInput {
     name: string;
@@ -18,3 +18,11 @@ export interface CreateProductInput {
 }
 
 export interface UpdateProductInput extends Partial<CreateProductInput> {}
+
+export interface ProductsQuery {
+    search?: string;
+    categoryId?: string;
+    status?: string;
+    page?: string;
+    limit?: string;
+}
