@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
-import { sendError } from "../../utils/response";
+import { sendError } from "../../app/utils/response";
 import { env } from "../../config/env";
-import { UserRole } from "../../types/user";
-import { CookieUtils } from "../../utils/cookie";
-import { jwtUtils } from "../../utils/jwt";
+import { UserRole } from "../../app/types/user";
+import { CookieUtils } from "../../app/utils/cookie";
+import { jwtUtils } from "../../app/utils/jwt";
 
 export const authenticate = (
     req: Request,

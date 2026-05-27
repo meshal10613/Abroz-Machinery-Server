@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
+import { AdminService } from "./admin.service";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
-import { AdminService } from "./admin.service";
 
 const updateAdminProfile = catchAsync(async (req: Request, res: Response) => {
     const userId = req?.user?.userId;

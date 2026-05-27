@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
+import { CategoryService } from "./category.service";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
-import { CategoryService } from "./category.service";
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
     const result = await CategoryService.createCategory(req.body);

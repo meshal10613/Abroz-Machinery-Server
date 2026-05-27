@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import app from "./app";
-import { env } from "./config/env";
-import { seedAdmin } from "./seeds/admin.seed";
+import { seedAdmin } from "./app/seeds/admin.seed";
+import { env } from "./app/config/env";
 
 const start = async () => {
     try {

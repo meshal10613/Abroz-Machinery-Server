@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware";
-import { UserRole } from "../../types/user";
+import { UserRole } from "../../app/types/user";
 import { AdminController } from "./admin.controller";
 import {
     validationProperty,

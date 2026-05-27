@@ -1,4 +1,4 @@
-import { ProductCondition, ProductStatus } from "../../types/product";
+import { ProductCondition, ProductStatus } from "../../app/types/product";
 
 export interface CreateProductInput {
     name: string;

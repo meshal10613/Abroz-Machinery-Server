@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
+import { ProductService } from "./product.service";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
-import { ProductService } from "./product.service";
 
 const createProduct = catchAsync(async (req: Request, res: Response) => {
     const payload = req.body;

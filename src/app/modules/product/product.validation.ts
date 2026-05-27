@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProductCondition, ProductStatus } from "../../types/product";
+import { ProductCondition, ProductStatus } from "../../app/types/product";
 
 const createProductSchema = z.object({
     name: z.string().min(1),

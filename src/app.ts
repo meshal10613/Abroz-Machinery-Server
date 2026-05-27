@@ -1,7 +1,7 @@
-import router from "./routes";
-import { notFound } from "./middlewares/notFound";
 import express, { Request, Response } from "express";
 import cookieParser from "cookie-parser";
+import router from "./app/routes";
+import { notFound } from "./app/middlewares/notFound";
 
 const app = express();
 

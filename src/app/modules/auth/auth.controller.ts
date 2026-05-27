@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
-import { catchAsync } from "../../shared/catchAsync";
-import { sendResponse } from "../../shared/sendResponse";
 import { AuthService } from "./auth.service";
-import { tokenUtils } from "../../utils/token";
 import AppError from "../../helper/AppError";
+import { catchAsync } from "../../shared/catchAsync";
+import { tokenUtils } from "../../utils/token";
+import { sendResponse } from "../../shared/sendResponse";
 
 const login = catchAsync(async (req: Request, res: Response) => {
     const { email, password } = req.body;
