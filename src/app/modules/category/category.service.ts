@@ -1,5 +1,6 @@
 import { QueryBuilder } from "../../builder/queryBuilder";
 import { logActivity } from "../../helper/activity.helper";
+import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
 import { Category } from "../../models/category.model";
 import {
@@ -10,7 +11,7 @@ import {
 
 const createCategory = async (input: CreateCategoryInput) => {
     const existing = await Category.findOne({ name: input.name });
-    if (existing) throw new Error("Category already exists");
+    if (existing) throw new AppError(409, "Category already exists");
 
     const category = await Category.create(input);
     await logActivity(
@@ -30,11 +31,12 @@ const getAllCategories = async (query: CategoryQuery) => {
         .filter()
         .fields()
         .paginate();
+        // .populate("products");
 };
 
 const getSingleCategory = async (id: string) => {
     const category = await Category.findById(id);
-    if (!category) throw new Error("Category not found");
+    if (!category) throw new AppError(404, "Category not found");
     return category;
 };
 
@@ -43,7 +45,7 @@ const updateCategory = async (id: string, input: UpdateCategoryInput) => {
         new: true,
     });
 
-    if (!category) throw new Error("Category not found");
+    if (!category) throw new AppError(404, "Category not found");
     await logActivity(
         ActivityMethod.UPDATE,
         `Updated category: ${category.name}}`,
@@ -53,7 +55,7 @@ const updateCategory = async (id: string, input: UpdateCategoryInput) => {
 
 const deleteCategory = async (id: string) => {
     const category = await Category.findByIdAndDelete(id);
-    if (!category) throw new Error("Category not found");
+    if (!category) throw new AppError(404, "Category not found");
 
     await logActivity(
         ActivityMethod.DELETE,

@@ -1,3 +1,4 @@
+import AppError from "../../helper/AppError";
 import { Admin } from "../../models/admin.model";
 import { User } from "../../models/user.model";
 import { IRequestUser } from "../../types";
@@ -78,19 +79,19 @@ const changePassword = async (
     const user = await User.findById(userId);
 
     if (!user || !user.isActive) {
-        throw new Error("User not found or inactive");
+        throw new AppError(404, "User not found or inactive");
     }
 
     // 2. Check current password
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
-        throw new Error("Current password is incorrect");
+        throw new AppError(400, "Current password is incorrect");
     }
 
     // 3. Prevent same password reuse
     const isSame = await user.comparePassword(newPassword);
     if (isSame) {
-        throw new Error("New password must be different");
+        throw new AppError(400, "New password must be different");
     }
 
     // 4. Update password (pre-save hook will hash it)

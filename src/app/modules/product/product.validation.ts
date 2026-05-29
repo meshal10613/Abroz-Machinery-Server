@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { ProductCondition, ProductStatus } from "../../types/product";
 
+const objectIdSchema = z
+    .string()
+    .regex(/^[0-9a-fA-F]{24}$/, "Invalid MongoDB ObjectId");
+
 const createProductSchema = z.object({
     name: z.string().min(1),
 
@@ -12,7 +16,7 @@ const createProductSchema = z.object({
 
     quantity: z.number().int().min(0),
 
-    categoryId: z.string().min(1),
+    categoryId: objectIdSchema,
 
     condition: z.nativeEnum(ProductCondition),
 

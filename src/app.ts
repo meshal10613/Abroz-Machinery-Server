@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import router from "./app/routes";
 import { notFound } from "./app/middlewares/notFound";
+import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 
 const app = express();
 
@@ -20,7 +21,7 @@ app.use("/", (_: Request, res: Response) => {
     });
 });
 
-// app.use(globalErrorHandler);
 app.use(notFound);
+app.use(globalErrorHandler);
 
 export default app;

@@ -1,4 +1,5 @@
 import { logActivity } from "../../helper/activity.helper";
+import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
 import { Admin } from "../../models/admin.model";
 import { UpdateAdminInput, UpdateClickInput } from "./admin.interface";
@@ -7,7 +8,7 @@ const updateAdminProfile = async (userId: string, input: UpdateAdminInput) => {
     const admin = await Admin.findOne({ user: userId });
 
     if (!admin) {
-        throw new Error("Admin profile not found");
+        throw new AppError(404, "Admin profile not found");
     }
 
     if (input.businessName !== undefined)
@@ -42,7 +43,7 @@ const updateAdminClicks = async (input: UpdateClickInput) => {
     const admin = await Admin.findOne();
 
     if (!admin) {
-        throw new Error("Admin profile not found");
+        throw new AppError(404, "Admin profile not found");
     }
 
     const today = new Date().toISOString().split("T")[0];

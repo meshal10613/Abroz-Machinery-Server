@@ -8,21 +8,19 @@ import status from "http-status";
 
 export const authenticate = (
     req: Request,
-    res: Response,
+    _res: Response,
     next: NextFunction,
 ): void => {
     const token = CookieUtils.getCookie(req, "token");
 
     if (!token) {
         throw new AppError(status.UNAUTHORIZED, "Authentication required.");
-        return;
     }
 
     const verified = jwtUtils.verifyToken(token, env.jwtSecret);
 
     if (!verified.success) {
         throw new AppError(status.UNAUTHORIZED, "Invalid or expired token.");
-        return;
     }
 
     req.user = {

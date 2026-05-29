@@ -1,6 +1,8 @@
 import { QueryBuilder } from "../../builder/queryBuilder";
 import { logActivity } from "../../helper/activity.helper";
+import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
+import { Category } from "../../models/category.model";
 import { Product } from "../../models/product.model";
 import {
     CreateProductInput,
@@ -9,6 +11,13 @@ import {
 } from "./product.interface";
 
 const createProduct = async (input: CreateProductInput) => {
+    const categoryExists = await Category.exists({
+        _id: input.categoryId,
+    });
+    if (!categoryExists) {
+        throw new AppError(404, "Category not found");
+    }
+
     const product = await Product.create(input);
     await logActivity(
         ActivityMethod.CREATE,
@@ -34,7 +43,7 @@ const getSingleProduct = async (id: string) => {
     const product = await Product.findById(id).populate("categoryId");
 
     if (!product) {
-        throw new Error("Product not found");
+        throw new AppError(404, "Product not found");
     }
 
     const today = new Date().toISOString().split("T")[0];
@@ -69,7 +78,7 @@ const updateProduct = async (id: string, input: UpdateProductInput) => {
         new: true,
     }).populate("categoryId");
 
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new AppError(404, "Product not found");
 
     await logActivity(
         ActivityMethod.UPDATE,
@@ -82,14 +91,12 @@ const updateProduct = async (id: string, input: UpdateProductInput) => {
 const deleteProduct = async (id: string) => {
     const product = await Product.findByIdAndDelete(id);
 
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new AppError(404, "Product not found");
 
     await logActivity(
         ActivityMethod.DELETE,
         `Deleted product: ${product.name}`,
     );
-
-    return { message: "Product deleted successfully" };
 };
 
 export const ProductService = {
