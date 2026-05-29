@@ -9,6 +9,13 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/", (_: Request, res: Response) => {
+    res.json({
+        success: true,
+        message: "Welcome to Abroz Machinery API",
+    });
+});
+
 // Mount modules
 app.use("/api/v1", router);
 
