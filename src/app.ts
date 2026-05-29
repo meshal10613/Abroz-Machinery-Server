@@ -9,19 +9,15 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+// Mount modules
+app.use("/api/v1", router);
+
 app.use("/", (_: Request, res: Response) => {
     res.json({
         success: true,
         message: "Welcome to Abroz Machinery API",
     });
-});
-
-// Mount modules
-app.use("/api/v1", router);
-
-// Health check
-app.get("/health", (_: Request, res: Response) => {
-    res.json({ status: "ok" });
 });
 
 // app.use(globalErrorHandler);

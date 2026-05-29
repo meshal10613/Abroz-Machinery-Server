@@ -140,8 +140,6 @@ export class QueryBuilder<T> {
                 page,
                 limit,
                 totalPages,
-                hasNextPage: page < totalPages,
-                hasPrevPage: page > 1,
             },
         };
     }

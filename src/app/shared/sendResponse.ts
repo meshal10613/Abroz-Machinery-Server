@@ -1,16 +1,12 @@
 import { Response } from "express";
+import { PaginationMeta } from "../types/query";
 
 interface IResponseData<T> {
     httpStatusCode: number;
     success: boolean;
     message: string;
     data?: T;
-    meta?: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-    };
+    meta?: PaginationMeta;
 }
 
 export const sendResponse = <T>(
