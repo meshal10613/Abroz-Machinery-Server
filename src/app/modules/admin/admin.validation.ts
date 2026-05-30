@@ -1,9 +1,8 @@
 import { z } from "zod";
+import { Social } from "../../types/admin";
 
 const updateClickSchema = z.object({
-    type: z.enum(["whatsapp", "messenger"], {
-        message: "Type must be 'whatsapp' or 'messenger'",
-    }),
+    type: z.nativeEnum(Social, "Invalid social type"),
 });
 
 const updateAdminSchema = z

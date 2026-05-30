@@ -34,7 +34,7 @@ const getAllProducts = async (query: ProductsQuery) => {
     })
         .search()
         .filter()
-        .populate({ path: "categoryId" })
+        .populate({ path: "categoryId", select: "name" })
         .fields()
         .paginate();
 };

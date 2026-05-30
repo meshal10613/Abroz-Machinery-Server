@@ -4,6 +4,10 @@ import { ActivityMethod } from "../../models/activity.model";
 import { Admin } from "../../models/admin.model";
 import { UpdateAdminInput, UpdateClickInput } from "./admin.interface";
 
+const getAdminInfo = async () => {
+    return await Admin.findOne().select("-__v -createdAt -updatedAt -analytics").lean();
+};
+
 const updateAdminProfile = async (userId: string, input: UpdateAdminInput) => {
     const admin = await Admin.findOne({ user: userId });
 
@@ -87,11 +91,11 @@ const updateAdminClicks = async (input: UpdateClickInput) => {
 
     admin.markModified("analytics");
     await admin.save();
-
-    return admin;
+    return input.type;
 };
 
 export const AdminService = {
+    getAdminInfo,
     updateAdminProfile,
     updateAdminClicks,
 };

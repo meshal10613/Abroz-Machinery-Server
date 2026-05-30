@@ -1,17 +1,17 @@
 services:
-  mongo:
-    image: mongo:7
-    container_name: abroz-mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    restart: always
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+  # mongo:
+  #   image: mongo:7
+  #   container_name: abroz-mongo
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   restart: always
+  #   healthcheck:
+  #     test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
 
   app:
     build: .
@@ -25,11 +25,13 @@ services:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=1000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
-    depends_on:
-      mongo:
-        condition: service_healthy
+    # depends_on:
+    #   mongo:
+    #     condition: service_healthy
 
   nginx:
     image: nginx:alpine
@@ -41,5 +43,5 @@ services:
     depends_on:
       - app
 
-volumes:
-  mongo_data:
+# volumes:
+#   mongo_data:

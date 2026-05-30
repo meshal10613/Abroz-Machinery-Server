@@ -10,6 +10,11 @@ import { UserRole } from "../../types/user";
 
 const router = Router();
 
+router.get(
+    "/info",
+    AdminController.getAdminInfo,
+);
+
 // Update admin profile (admin only)
 router.patch(
     "/profile",

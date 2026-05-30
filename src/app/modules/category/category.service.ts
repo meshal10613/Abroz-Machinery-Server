@@ -30,8 +30,11 @@ const getAllCategories = async (query: CategoryQuery) => {
         .search()
         .filter()
         .fields()
+        .populate({
+            path: "products",
+            select: "_id",
+        })
         .paginate();
-        // .populate("products");
 };
 
 const getSingleCategory = async (id: string) => {
