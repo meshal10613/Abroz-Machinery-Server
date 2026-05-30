@@ -47,8 +47,8 @@ export const uploadFileToCloudinary = async (
                 {
                     // resource_type: "auto",
                     resource_type: "auto",
-                    public_id: `Vehiqo/${folder}/${uniqueName}`,
-                    folder: `Vehiqo/${folder}`,
+                    public_id: `Abroz/${folder}/${uniqueName}`,
+                    folder: `Abroz/${folder}`,
                 },
                 (error, result) => {
                     if (error) {

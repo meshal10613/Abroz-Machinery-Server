@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { Error as MongooseError } from "mongoose";
 import AppError from "../helper/AppError";
-import { MongoServerError } from 'mongodb';
+import z from "zod";
+import { handleZodError } from "../helper/handleZodError";
+import { TErrorSources } from "../interface/error.interface";
+import status from "http-status";
 
 const globalErrorHandler = (
     err: Error,
@@ -11,6 +14,7 @@ const globalErrorHandler = (
 ) => {
     let statusCode = 500;
     let message = "Internal Server Error";
+    let errorSources: TErrorSources[] = [];
 
     // AppError (custom)
     if (err instanceof AppError) {
@@ -33,10 +37,17 @@ const globalErrorHandler = (
     }
 
     // MongoDB Duplicate Key Error
-    else if (err instanceof MongoServerError && err.code === 11000) {
-        statusCode = 409;
-        const field = Object.keys((err as any).keyValue || {}).join(", ");
-        message = `${field} already exists`;
+    // else if (err instanceof MongoServerError && err.code === 11000) {
+    //     statusCode = 409;
+    //     const field = Object.keys((err as any).keyValue || {}).join(", ");
+    //     message = `${field} already exists`;
+    // }
+
+    else if (err instanceof z.ZodError) {
+        const simplifiedError = handleZodError(err);
+        statusCode = simplifiedError.statusCode as number;
+        message = simplifiedError.message;
+        errorSources = [...simplifiedError.errorSources];
     }
 
     // JWT Errors
@@ -56,9 +67,21 @@ const globalErrorHandler = (
         message = "Document not found";
     }
 
+    else if (err instanceof Error) {
+        statusCode = status.INTERNAL_SERVER_ERROR;
+        message = err.message;
+        errorSources = [
+            {
+                path: "",
+                message: err.message,
+            },
+        ];
+    }
+
     res.status(statusCode).json({
         success: false,
         message,
+        errorSources,
     });
 };
 
