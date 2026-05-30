@@ -13,6 +13,7 @@ const UserSchema = new Schema<IUser>(
             default: UserRole.CUSTOMER,
         },
         isActive: { type: Boolean, default: true },
+        image: { type: String, default: null },
     },
     { timestamps: true },
 );

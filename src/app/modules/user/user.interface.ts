@@ -1,3 +1,4 @@
 export interface UpdateUserInput {
-    name: string;
+    name?: string;
+    image?: string;
 }

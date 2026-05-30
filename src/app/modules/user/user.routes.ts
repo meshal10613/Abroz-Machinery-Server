@@ -6,6 +6,7 @@ import {
     zodValidate,
 } from "../../middlewares/zodValidation";
 import { userValidation } from "./user.validation";
+import { multerUpload } from "../../config/multer";
 
 const router = Router();
 
@@ -13,6 +14,7 @@ const router = Router();
 router.patch(
     "/profile",
     authenticate,
+    multerUpload.single("image"),
     zodValidate(userValidation.updateUserSchema, validationProperty.BODY),
     UserController.updateUser,
 );

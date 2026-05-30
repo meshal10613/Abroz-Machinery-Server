@@ -46,11 +46,17 @@ const getSingleProduct = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateProduct = catchAsync(async (req: Request, res: Response) => {
+    const payload = req.body;
     const { id } = req.params;
 
+    if (req.files && Array.isArray(req.files)) {
+        payload.images = (req.files as Express.Multer.File[]).map(
+            (file) => file.path,
+        );
+    }
     const result = await ProductService.updateProduct(
         id as string,
-        req.body,
+        payload,
     );
 
     sendResponse(res, {

@@ -4,9 +4,14 @@ import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
+    const payload = req.body;
     const userId = req?.user?.userId;
 
-    const result = await UserService.updateUser(userId as string, req.body);
+    // Only update image if a new file was uploaded
+    if (req.file?.path) {
+        payload.image = req.file.path; // 👈 Cloudinary URL
+    }
+    const result = await UserService.updateUser(userId as string, payload);
 
     sendResponse(res, {
         httpStatusCode: 200,

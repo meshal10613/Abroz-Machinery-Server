@@ -1,4 +1,5 @@
 import { QueryBuilder } from "../../builder/queryBuilder";
+import { deleteFileFromCloudinary } from "../../config/cloudinary";
 import { logActivity } from "../../helper/activity.helper";
 import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
@@ -74,15 +75,28 @@ const getSingleProduct = async (id: string) => {
 };
 
 const updateProduct = async (id: string, input: UpdateProductInput) => {
+    const existingProduct = await Product.findById(id);
+
+    if (!existingProduct) {
+        throw new AppError(404, "Product not found");
+    }
+
+    const oldImages = [...existingProduct.images];
+
     const product = await Product.findByIdAndUpdate(id, input, {
         new: true,
+        runValidators: true,
     }).populate("categoryId");
 
-    if (!product) throw new AppError(404, "Product not found");
+    if (input.images?.length && oldImages.length > 0) {
+        await Promise.all(
+            oldImages.map((img) => deleteFileFromCloudinary(img)),
+        );
+    }
 
     await logActivity(
         ActivityMethod.UPDATE,
-        `Updated product: ${product.name}`,
+        `Updated product: ${product!.name}`,
     );
 
     return product;
@@ -92,6 +106,13 @@ const deleteProduct = async (id: string) => {
     const product = await Product.findByIdAndDelete(id);
 
     if (!product) throw new AppError(404, "Product not found");
+
+    // Delete all images from Cloudinary
+    if (product.images.length > 0) {
+        await Promise.all(
+            product.images.map((img) => deleteFileFromCloudinary(img)),
+        );
+    }
 
     await logActivity(
         ActivityMethod.DELETE,
