@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
-import path from "path";
 import AppError from "../helper/AppError";
 import status from "http-status";
 
-dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+dotenv.config();
 
 const requiredEnv = (key: string) => {
     const value = process.env[key];
