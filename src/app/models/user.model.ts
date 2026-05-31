@@ -14,6 +14,21 @@ const UserSchema = new Schema<IUser>(
         },
         isActive: { type: Boolean, default: true },
         image: { type: String, default: null },
+        otp: {
+            type: String,
+            default: null,
+            validate: {
+                validator: function (value: string | null) {
+                    return value === null || /^\d{6}$/.test(value);
+                },
+                message: "OTP must be exactly 6 digits",
+            },
+        },
+
+        otpExpiresIn: {
+            type: Date,
+            default: null,
+        },
     },
     { timestamps: true },
 );

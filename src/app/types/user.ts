@@ -11,6 +11,8 @@ export interface IUser extends Document {
     password: string;
     role: UserRole;
     isActive: boolean;
+    otp?: string;
+    otpExpiresIn?: Date;
     image?: string;
     createdAt: Date;
     comparePassword(candidate: string): Promise<boolean>;

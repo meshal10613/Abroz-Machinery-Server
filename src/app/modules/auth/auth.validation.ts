@@ -11,4 +11,33 @@ const loginSchema = z.object({
     // and enforce strict length/complexity rules during registration instead.
 });
 
-export const authValidation = { loginSchema };
+const forgetPasswordSchema = z.object({
+    email: z.string().min(1, "Email is required").email("Invalid email format"),
+});
+
+const verifyEmailSchema = z.object({
+    email: z.string().min(1, "Email is required").email("Invalid email format"),
+    otp: z
+        .string()
+        .min(1, "OTP is required")
+        .regex(/^\d{6}$/, "OTP must be exactly 6 digits"),
+});
+
+const resetPasswordSchema = z.object({
+    email: z.string().min(1, "Email is required").email("Invalid email format"),
+    otp: z
+        .string()
+        .min(1, "OTP is required")
+        .regex(/^\d{6}$/, "OTP must be exactly 6 digits"),
+    newPassword: z
+        .string()
+        .min(1, "New password is required")
+        .min(8, "New password must be at least 8 characters"),
+});
+
+export const authValidation = {
+    loginSchema,
+    forgetPasswordSchema,
+    verifyEmailSchema,
+    resetPasswordSchema,
+};

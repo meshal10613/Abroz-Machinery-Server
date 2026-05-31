@@ -16,6 +16,24 @@ router.post(
     AuthController.login,
 );
 
+router.post(
+    "/forget-password",
+    zodValidate(authValidation.forgetPasswordSchema, validationProperty.BODY),
+    AuthController.forgetPassword,
+);
+
+router.post(
+    "/verify-email",
+    zodValidate(authValidation.verifyEmailSchema, validationProperty.BODY),
+    AuthController.verifyEmail,
+);
+
+router.patch(
+    "/reset-password",
+    zodValidate(authValidation.resetPasswordSchema, validationProperty.BODY),
+    AuthController.resetPassword,
+);
+
 router.get(
     "/me",
     authenticate,

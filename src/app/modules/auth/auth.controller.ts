@@ -48,8 +48,50 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
         httpStatusCode: 200,
         success: true,
         message: result.message,
-        data: null,
     });
 });
 
-export const AuthController = { login, getMe, changePassword };
+const forgetPassword = catchAsync(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    const result = await AuthService.forgetPassword(email);
+
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: result.message,
+    });
+});
+
+const verifyEmail = catchAsync(async (req: Request, res: Response) => {
+    const { email, otp } = req.body;
+
+    const result = await AuthService.verifyEmail(email, otp);
+
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: result.message,
+    });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+    const { email, otp, newPassword } = req.body;
+
+    const result = await AuthService.resetPassword(email, otp, newPassword);
+
+    sendResponse(res, {
+        httpStatusCode: 200,
+        success: true,
+        message: result.message,
+    });
+});
+
+export const AuthController = {
+    login,
+    getMe,
+    changePassword,
+    forgetPassword,
+    verifyEmail,
+    resetPassword,
+};
