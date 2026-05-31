@@ -28,7 +28,7 @@ router.post(
     AuthController.verifyEmail,
 );
 
-router.patch(
+router.post(
     "/reset-password",
     zodValidate(authValidation.resetPasswordSchema, validationProperty.BODY),
     AuthController.resetPassword,

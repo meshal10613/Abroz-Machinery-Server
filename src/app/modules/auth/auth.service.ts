@@ -159,7 +159,6 @@ const verifyEmail = async (email: string, otp: string) => {
 
 const resetPassword = async (
     email: string,
-    otp: string,
     newPassword: string,
 ) => {
     const user = await User.findOne({ email, isActive: true });
@@ -168,26 +167,12 @@ const resetPassword = async (
         throw new AppError(404, "User not found or inactive");
     }
 
-    if (!user.otp || !user.otpExpiresIn) {
-        throw new AppError(400, "OTP not found. Please request a new OTP");
-    }
-
-    if (user.otp !== otp) {
-        throw new AppError(400, "Invalid OTP");
-    }
-
-    if (user.otpExpiresIn.getTime() < Date.now()) {
-        throw new AppError(400, "OTP has expired");
-    }
-
     const isSame = await user.comparePassword(newPassword);
     if (isSame) {
         throw new AppError(400, "New password must be different");
     }
 
     user.password = newPassword;
-    user.otp = undefined;
-    user.otpExpiresIn = undefined;
     await user.save();
 
     return {

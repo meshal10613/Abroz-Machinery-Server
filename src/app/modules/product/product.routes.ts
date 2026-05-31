@@ -2,10 +2,8 @@ import { Router } from "express";
 import { authenticate, authorize } from "../auth/auth.middleware";
 import { ProductController } from "./product.controller";
 import { productValidation } from "./product.validation";
-import {
-    validationProperty,
-    zodValidate,
-} from "../../middlewares/zodValidation";
+import { validationProperty } from "../../middlewares/zodValidation";
+import { zodValidateWithCleanup } from "../../middlewares/zodValidationWithCleanup";
 import { multerUpload } from "../../config/multer";
 import { UserRole } from "../../types/user";
 
@@ -17,7 +15,10 @@ router.post(
     authenticate,
     authorize(UserRole.ADMIN),
     multerUpload.array("images", 5),
-    zodValidate(productValidation.createProductSchema, validationProperty.BODY),
+    zodValidateWithCleanup(
+        productValidation.createProductSchema,
+        validationProperty.BODY,
+    ),
     ProductController.createProduct,
 );
 
@@ -32,7 +33,11 @@ router.patch(
     "/:id",
     authenticate,
     authorize(UserRole.ADMIN),
-    zodValidate(productValidation.updateProductSchema, validationProperty.BODY),
+    multerUpload.array("images", 5),
+    zodValidateWithCleanup(
+        productValidation.updateProductSchema,
+        validationProperty.BODY,
+    ),
     ProductController.updateProduct,
 );
 

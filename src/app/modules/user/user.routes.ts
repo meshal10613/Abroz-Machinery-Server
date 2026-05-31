@@ -1,12 +1,10 @@
 import { Router } from "express";
 import { authenticate } from "../auth/auth.middleware";
 import { UserController } from "./user.controller";
-import {
-    validationProperty,
-    zodValidate,
-} from "../../middlewares/zodValidation";
+import { validationProperty } from "../../middlewares/zodValidation";
 import { userValidation } from "./user.validation";
 import { multerUpload } from "../../config/multer";
+import { zodValidateWithCleanup } from "../../middlewares/zodValidationWithCleanup";
 
 const router = Router();
 
@@ -15,7 +13,10 @@ router.patch(
     "/profile",
     authenticate,
     multerUpload.single("image"),
-    zodValidate(userValidation.updateUserSchema, validationProperty.BODY),
+    zodValidateWithCleanup(
+        userValidation.updateUserSchema,
+        validationProperty.BODY,
+    ),
     UserController.updateUser,
 );
 

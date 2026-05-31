@@ -76,9 +76,9 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 });
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-    const { email, otp, newPassword } = req.body;
+    const { email, newPassword } = req.body;
 
-    const result = await AuthService.resetPassword(email, otp, newPassword);
+    const result = await AuthService.resetPassword(email, newPassword);
 
     sendResponse(res, {
         httpStatusCode: 200,
