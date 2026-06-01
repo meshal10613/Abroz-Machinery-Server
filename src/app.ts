@@ -5,6 +5,7 @@ import router from "./app/routes";
 import { notFound } from "./app/middlewares/notFound";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import path from "path";
+import os from "os";
 
 const app = express();
 
@@ -32,6 +33,10 @@ app.get("/", (_: Request, res: Response) => {
     res.json({
         success: true,
         message: "Welcome to Abroz Machinery API",
+        instance: {
+            pid: process.pid,
+            hostname: os.hostname(),
+        },
     });
 });
 

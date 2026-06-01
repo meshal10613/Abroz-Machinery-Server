@@ -1,9 +1,8 @@
 services:
   app:
     build: .
-    container_name: abroz-machinery-server
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     volumes:
       - ./src:/app/src
     environment:
@@ -18,10 +17,11 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
+    deploy:
+      replicas: 5
 
   redis:
     image: redis:7-alpine
-    container_name: abroz-redis
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
@@ -31,7 +31,6 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: abroz-nginx
     ports:
       - "80:80"
     volumes:
