@@ -100,7 +100,11 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
     const topProducts = await Product.find()
         .sort({ "analytics.totalClicks": -1 })
         .limit(5)
-        .select("name images analytics.totalClicks")
+        .select("name images analytics categoryId")
+        .populate({
+            path: "categoryId",
+            select: "name",
+        })
         .lean();
 
     return {
@@ -125,15 +129,27 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
             growthPercent: calcGrowth(todayMessenger, yesterdayMessenger),
         },
         productClicksLast30Days: clickAggregation,
-        topViewedProducts: topProducts.map((p) => ({
-            id: String(p._id),
-            name: p.name,
-            totalClicks: p.analytics?.totalClicks ?? 0,
-            images: p.images ?? [],
-        })),
+        topViewedProducts: topProducts.map((p) => {
+            const todayProductClicks = p.analytics?.clicksByDate?.find(
+                (d) => String(d.date).split("T")[0] === todayStr,
+            )?.count ?? 0;
+
+            const yesterdayProductClicks = p.analytics?.clicksByDate?.find(
+                (d) => String(d.date).split("T")[0] === yesterdayStr,
+            )?.count ?? 0;
+
+            return {
+                id: String(p._id),
+                name: p.name,
+                category: (p.categoryId as any).name,
+                images: p.images ?? [],
+                totalClicks: p.analytics?.totalClicks ?? 0,
+                growthPercent: calcGrowth(todayProductClicks, yesterdayProductClicks),
+            };
+        }),
     };
 };
 
 export const StatsService = {
-	getDashboardStats,
+    getDashboardStats,
 };

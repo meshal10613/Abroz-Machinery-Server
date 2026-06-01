@@ -18,7 +18,9 @@ export interface DashboardStats {
     topViewedProducts: {
         id: string;
         name: string;
+        category: string;
         totalClicks: number;
+        growthPercent: number;
         images: string[];
     }[];
 }
