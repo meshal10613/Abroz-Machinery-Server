@@ -3,6 +3,7 @@ import dns from "node:dns";
 import app from "./app";
 import { seedAdmin } from "./app/seeds/admin.seed";
 import { env } from "./app/config/env";
+import { redisClient } from "./app/config/redis";
 
 const start = async () => {
     try {
@@ -12,6 +13,9 @@ const start = async () => {
 
         await mongoose.connect(env.mongoUri);
         console.log("🗄️  MongoDB connected");
+
+        await redisClient.connect();
+        console.log("Redis connected");
 
         // Run seed after DB connects
         await seedAdmin();

@@ -14,20 +14,14 @@ const requiredEnv = (key: string) => {
         );
     }
 
-    if (
-        value.includes("YOUR_ACTUAL_ATLAS_PASSWORD") ||
-        value.includes("<db_password>")
-    ) {
-        throw new AppError(
-            status.BAD_REQUEST,
-            `Replace the placeholder value in ${key}`,
-        );
-    }
-
     return value;
 };
 
 export const env = {
+    socket: {
+        host: requiredEnv("REDIS_HOST"),
+        port: Number(requiredEnv("REDIS_PORT")),
+    },
     port: requiredEnv("PORT"),
     mongoUri: requiredEnv("MONGO_URI"),
     jwtSecret: requiredEnv("JWT_SECRET"),
