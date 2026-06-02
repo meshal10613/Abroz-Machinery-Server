@@ -15,36 +15,36 @@ A production-ready RESTful API server for the **Abroz Machinery** platform — a
 ## Table of Contents
 
 - [Abroz Machinery Server](#abroz-machinery-server)
-	- [Table of Contents](#table-of-contents)
-	- [Features](#features)
-	- [Tech Stack](#tech-stack)
-	- [Project Structure](#project-structure)
-	- [Environment Variables](#environment-variables)
-	- [API Reference](#api-reference)
-		- [Auth Routes — `/api/v1/auth`](#auth-routes--apiv1auth)
-		- [User Routes — `/api/v1/user`](#user-routes--apiv1user)
-		- [Admin Routes — `/api/v1/admin`](#admin-routes--apiv1admin)
-		- [Category Routes — `/api/v1/category`](#category-routes--apiv1category)
-		- [Product Routes — `/api/v1/product`](#product-routes--apiv1product)
-		- [Stats Routes — `/api/v1/stats`](#stats-routes--apiv1stats)
-	- [Getting Started — Local Development](#getting-started--local-development)
-		- [Prerequisites](#prerequisites)
-		- [1. Clone the repository](#1-clone-the-repository)
-		- [2. Install dependencies](#2-install-dependencies)
-		- [3. Configure environment variables](#3-configure-environment-variables)
-		- [4. Run the development server](#4-run-the-development-server)
-		- [5. Build for production](#5-build-for-production)
-	- [Running with Docker](#running-with-docker)
-		- [Prerequisites](#prerequisites-1)
-		- [1. Clone the repository](#1-clone-the-repository-1)
-		- [2. Configure environment variables](#2-configure-environment-variables)
-		- [3. Build and start all services](#3-build-and-start-all-services)
-		- [4. Access the API](#4-access-the-api)
-		- [5. Useful Docker commands](#5-useful-docker-commands)
-	- [Architecture Overview](#architecture-overview)
-	- [Authentication \& Authorization](#authentication--authorization)
-	- [CORS](#cors)
-	- [License](#license)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Tech Stack](#tech-stack)
+  - [Project Structure](#project-structure)
+  - [Environment Variables](#environment-variables)
+  - [API Reference](#api-reference)
+    - [Auth Routes — `/api/v1/auth`](#auth-routes--apiv1auth)
+    - [User Routes — `/api/v1/user`](#user-routes--apiv1user)
+    - [Admin Routes — `/api/v1/admin`](#admin-routes--apiv1admin)
+    - [Category Routes — `/api/v1/category`](#category-routes--apiv1category)
+    - [Product Routes — `/api/v1/product`](#product-routes--apiv1product)
+    - [Stats Routes — `/api/v1/stats`](#stats-routes--apiv1stats)
+  - [Getting Started — Local Development](#getting-started--local-development)
+    - [Prerequisites](#prerequisites)
+    - [1. Clone the repository](#1-clone-the-repository)
+    - [2. Install dependencies](#2-install-dependencies)
+    - [3. Configure environment variables](#3-configure-environment-variables)
+    - [4. Run the development server](#4-run-the-development-server)
+    - [5. Build for production](#5-build-for-production)
+  - [Running with Docker](#running-with-docker)
+    - [Prerequisites](#prerequisites-1)
+    - [1. Clone the repository](#1-clone-the-repository-1)
+    - [2. Configure environment variables](#2-configure-environment-variables)
+    - [3. Build and start all services](#3-build-and-start-all-services)
+    - [4. Access the API](#4-access-the-api)
+    - [5. Useful Docker commands](#5-useful-docker-commands)
+  - [Architecture Overview](#architecture-overview)
+  - [Authentication \& Authorization](#authentication--authorization)
+  - [CORS](#cors)
+  - [License](#license)
 
 ---
 
@@ -449,6 +449,9 @@ http://localhost/api/v1
 
 ```bash
 # Run in detached mode
+docker compose up -d
+
+# Run in detached mode
 docker compose up --build -d
 
 # View logs for all services
@@ -462,6 +465,9 @@ docker compose down
 
 # Stop and remove volumes (including Redis data)
 docker compose down -v
+
+#
+docker compose up -d --scale app=5 --remove-orphans
 ```
 
 ---

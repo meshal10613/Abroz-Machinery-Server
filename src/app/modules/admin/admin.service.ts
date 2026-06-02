@@ -1,3 +1,6 @@
+import { CacheKeys } from "../../cache/cache.keys";
+import { clearDashboardCache } from "../../cache/cache.service";
+import { redisClient } from "../../config/redis";
 import { logActivity } from "../../helper/activity.helper";
 import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
@@ -5,10 +8,31 @@ import { Admin } from "../../models/admin.model";
 import { UpdateAdminInput, UpdateClickInput } from "./admin.interface";
 
 const getAdminInfo = async () => {
-    return await Admin.findOne().select("-__v -createdAt -updatedAt -analytics").lean();
+    const cached = await redisClient.get(CacheKeys.admin("info"));
+
+    if (cached) {
+        return JSON.parse(cached);
+    }
+
+    const admin = await Admin.findOne()
+        .select("-__v -createdAt -updatedAt -analytics")
+        .lean();
+
+    if (!admin) {
+        throw new AppError(404, "Admin not found");
+    }
+
+    await redisClient.set(CacheKeys.admin("info"), JSON.stringify(admin), {
+        EX: 3600, // 1 hour
+    });
+
+    return admin;
 };
 
-const updateAdminProfile = async (userId: string, input: UpdateAdminInput) => {
+const updateAdminProfile = async (
+    userId: string,
+    input: UpdateAdminInput
+) => {
     const admin = await Admin.findOne({ user: userId });
 
     if (!admin) {
@@ -35,9 +59,13 @@ const updateAdminProfile = async (userId: string, input: UpdateAdminInput) => {
     }
 
     await admin.save();
+
+    // 🔥 invalidate cache
+    await redisClient.del(CacheKeys.admin("info"));
+
     await logActivity(
         ActivityMethod.UPDATE,
-        `Updated business profile information`,
+        `Updated business profile information`
     );
 
     return admin;
@@ -67,30 +95,43 @@ const updateAdminClicks = async (input: UpdateClickInput) => {
         analytics.totalWhatsappClicks += 1;
 
         const existingDay = analytics.whatsappClicksByDate.find(
-            (item) => String(item.date).split("T")[0] === today,
+            (item) =>
+                String(item.date).split("T")[0] === today
         );
 
         if (existingDay) {
             existingDay.count += 1;
         } else {
-            analytics.whatsappClicksByDate.push({ date: today, count: 1 });
+            analytics.whatsappClicksByDate.push({
+                date: today,
+                count: 1,
+            });
         }
     } else {
         analytics.totalMessengerClicks += 1;
 
         const existingDay = analytics.messengerClicksByDate.find(
-            (item) => String(item.date).split("T")[0] === today,
+            (item) =>
+                String(item.date).split("T")[0] === today
         );
 
         if (existingDay) {
             existingDay.count += 1;
         } else {
-            analytics.messengerClicksByDate.push({ date: today, count: 1 });
+            analytics.messengerClicksByDate.push({
+                date: today,
+                count: 1,
+            });
         }
     }
 
     admin.markModified("analytics");
     await admin.save();
+
+    // optional but safe:
+    await redisClient.del(CacheKeys.admin("info"));
+    await clearDashboardCache();
+
     return input.type;
 };
 

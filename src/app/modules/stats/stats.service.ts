@@ -1,3 +1,5 @@
+import { CacheKeys } from "../../cache/cache.keys";
+import { redisClient } from "../../config/redis";
 import { Admin } from "../../models/admin.model";
 import { Category } from "../../models/category.model";
 import { Product } from "../../models/product.model";
@@ -9,6 +11,12 @@ const calcGrowth = (today: number, yesterday: number): number => {
 };
 
 const getDashboardStats = async (): Promise<DashboardStats> => {
+    const cached = await redisClient.get(CacheKeys.dashboard);
+
+    if (cached) {
+        return JSON.parse(cached);
+    }
+
     const now = new Date();
 
     const todayStart = new Date(now);
@@ -23,29 +31,30 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
     const todayStr = now.toISOString().split("T")[0];
     const yesterdayStr = yesterdayStart.toISOString().split("T")[0];
 
-    // ── 1. Products ──────────────────────────────────────────────────────────
-    const [totalProducts, todayProducts, yesterdayProducts] = await Promise.all(
-        [
-            Product.countDocuments(),
-            Product.countDocuments({ createdAt: { $gte: todayStart } }),
-            Product.countDocuments({
-                createdAt: { $gte: yesterdayStart, $lt: todayStart },
-            }),
-        ],
-    );
+    // ── Parallel core queries ─────────────────────────
+    const [
+        totalProducts,
+        todayProducts,
+        yesterdayProducts,
+        totalCategories,
+        todayCategories,
+        yesterdayCategories,
+        admin,
+    ] = await Promise.all([
+        Product.countDocuments(),
+        Product.countDocuments({ createdAt: { $gte: todayStart } }),
+        Product.countDocuments({
+            createdAt: { $gte: yesterdayStart, $lt: todayStart },
+        }),
 
-    // ── 2. Categories ────────────────────────────────────────────────────────
-    const [totalCategories, todayCategories, yesterdayCategories] =
-        await Promise.all([
-            Category.countDocuments(),
-            Category.countDocuments({ createdAt: { $gte: todayStart } }),
-            Category.countDocuments({
-                createdAt: { $gte: yesterdayStart, $lt: todayStart },
-            }),
-        ]);
+        Category.countDocuments(),
+        Category.countDocuments({ createdAt: { $gte: todayStart } }),
+        Category.countDocuments({
+            createdAt: { $gte: yesterdayStart, $lt: todayStart },
+        }),
 
-    // ── 3. Admin click analytics ─────────────────────────────────────────────
-    const admin = await Admin.findOne().lean();
+        Admin.findOne().lean(),
+    ]);
 
     const whatsappTotal = admin?.analytics?.totalWhatsappClicks ?? 0;
     const messengerTotal = admin?.analytics?.totalMessengerClicks ?? 0;
@@ -70,7 +79,7 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
             (d) => String(d.date).split("T")[0] === yesterdayStr,
         )?.count ?? 0;
 
-    // ── 4. Last 30 days product clicks ───────────────────────────────────────
+    // ── Aggregation (unchanged) ───────────────────────
     const clickAggregation = await Product.aggregate([
         { $unwind: "$analytics.clicksByDate" },
         {
@@ -96,18 +105,14 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
         },
     ]);
 
-    // ── 5. Top 5 most viewed products ────────────────────────────────────────
     const topProducts = await Product.find()
         .sort({ "analytics.totalClicks": -1 })
         .limit(5)
         .select("name images analytics categoryId")
-        .populate({
-            path: "categoryId",
-            select: "name",
-        })
+        .populate({ path: "categoryId", select: "name" })
         .lean();
 
-    return {
+    const result: DashboardStats = {
         products: {
             total: totalProducts,
             todayCount: todayProducts,
@@ -130,13 +135,17 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
         },
         productClicksLast30Days: clickAggregation,
         topViewedProducts: topProducts.map((p) => {
-            const todayProductClicks = p.analytics?.clicksByDate?.find(
-                (d) => String(d.date).split("T")[0] === todayStr,
-            )?.count ?? 0;
+            const todayProductClicks =
+                p.analytics?.clicksByDate?.find(
+                    (d) =>
+                        String(d.date).split("T")[0] === todayStr,
+                )?.count ?? 0;
 
-            const yesterdayProductClicks = p.analytics?.clicksByDate?.find(
-                (d) => String(d.date).split("T")[0] === yesterdayStr,
-            )?.count ?? 0;
+            const yesterdayProductClicks =
+                p.analytics?.clicksByDate?.find(
+                    (d) =>
+                        String(d.date).split("T")[0] === yesterdayStr,
+                )?.count ?? 0;
 
             return {
                 id: String(p._id),
@@ -144,10 +153,24 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
                 category: (p.categoryId as any).name,
                 images: p.images ?? [],
                 totalClicks: p.analytics?.totalClicks ?? 0,
-                growthPercent: calcGrowth(todayProductClicks, yesterdayProductClicks),
+                growthPercent: calcGrowth(
+                    todayProductClicks,
+                    yesterdayProductClicks,
+                ),
             };
         }),
     };
+
+    // ⚡ cache result
+    await redisClient.set(
+        CacheKeys.dashboard,
+        JSON.stringify(result),
+        {
+            EX: 300, // 5 minutes (BEST for dashboard)
+        },
+    );
+
+    return result;
 };
 
 export const StatsService = {

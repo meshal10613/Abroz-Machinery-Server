@@ -1,3 +1,5 @@
+import { CacheKeys } from "../../cache/cache.keys";
+import { redisClient } from "../../config/redis";
 import AppError from "../../helper/AppError";
 import { Admin } from "../../models/admin.model";
 import { User } from "../../models/user.model";
@@ -47,7 +49,14 @@ const loginUser = async (input: LoginInput) => {
 };
 
 const getMe = async (userId: string) => {
-    // 1. Get user
+    const cacheKey = CacheKeys.me(userId);
+
+    const cached = await redisClient.get(cacheKey);
+
+    if (cached) {
+        return JSON.parse(cached);
+    }
+
     const user = await User.findById(userId).lean();
 
     if (!user || !user.isActive) {
@@ -56,20 +65,24 @@ const getMe = async (userId: string) => {
 
     let adminData = null;
 
-    // 2. If admin → fetch admin profile
     if (user.role === UserRole.ADMIN) {
         adminData = await Admin.findOne({ user: user._id }).lean();
     }
 
-    // 3. Return merged response
-    return {
+    const result = {
         id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,
         isActive: user.isActive,
-        admin: adminData, // null if not admin
+        admin: adminData,
     };
+
+    await redisClient.set(cacheKey, JSON.stringify(result), {
+        EX: 1800, // 30 min (safe for auth data)
+    });
+
+    return result;
 };
 
 const changePassword = async (
@@ -99,6 +112,9 @@ const changePassword = async (
     // 4. Update password (pre-save hook will hash it)
     user.password = newPassword;
     await user.save();
+
+    // 🔥 invalidate auth cache
+    await redisClient.del(CacheKeys.me(userId));
 
     return {
         message: "Password changed successfully",
@@ -174,6 +190,8 @@ const resetPassword = async (
 
     user.password = newPassword;
     await user.save();
+
+     await redisClient.del(CacheKeys.me(user._id.toString()));
 
     return {
         message: "Password reset successfully",

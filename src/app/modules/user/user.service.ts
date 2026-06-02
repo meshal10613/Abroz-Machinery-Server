@@ -1,4 +1,6 @@
+import { CacheKeys } from "../../cache/cache.keys";
 import { deleteFileFromCloudinary } from "../../config/cloudinary";
+import { redisClient } from "../../config/redis";
 import AppError from "../../helper/AppError";
 import { User } from "../../models/user.model";
 import { UpdateUserInput } from "./user.interface";
@@ -11,7 +13,6 @@ const updateUser = async (userId: string, input: UpdateUserInput) => {
     }
 
     if (user.image && input.image) {
-        // Delete old image from Cloudinary
         await deleteFileFromCloudinary(user.image);
     }
 
@@ -19,6 +20,9 @@ const updateUser = async (userId: string, input: UpdateUserInput) => {
     if (input.image) user.image = input.image;
 
     await user.save();
+
+    // 🔥 invalidate cache
+    await redisClient.del(CacheKeys.user(userId));
 
     return user;
 };

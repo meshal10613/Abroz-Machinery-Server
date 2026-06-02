@@ -1,5 +1,11 @@
 import { QueryBuilder } from "../../builder/queryBuilder";
+import { CacheKeys } from "../../cache/cache.keys";
+import {
+    clearDashboardCache,
+    clearProductCache,
+} from "../../cache/cache.service";
 import { deleteFileFromCloudinary } from "../../config/cloudinary";
+import { redisClient } from "../../config/redis";
 import { logActivity } from "../../helper/activity.helper";
 import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
@@ -15,61 +21,123 @@ const createProduct = async (input: CreateProductInput) => {
     const categoryExists = await Category.exists({
         _id: input.categoryId,
     });
+
     if (!categoryExists) {
         throw new AppError(404, "Category not found");
     }
 
     const product = await Product.create(input);
+
+    await clearProductCache();
+    await clearDashboardCache();
+
     await logActivity(
         ActivityMethod.CREATE,
         `Created product: ${product.name}`,
     );
+
     return product;
 };
 
 const getAllProducts = async (query: ProductsQuery) => {
-    return new QueryBuilder({
+    const cacheKey = `products:${JSON.stringify(query)}`;
+
+    const cached = await redisClient.get(cacheKey);
+
+    if (cached) {
+        return JSON.parse(cached);
+    }
+
+    const result = await new QueryBuilder({
         model: Product,
         query,
         searchFields: ["name", "origin", "brandName", "partNumber"],
     })
         .search()
         .filter()
-        .populate({ path: "categoryId", select: "name" })
+        .populate({
+            path: "categoryId",
+            select: "name",
+        })
         .fields()
         .paginate();
+
+    await redisClient.set(cacheKey, JSON.stringify(result), {
+        EX: 300, // 5 min
+    });
+
+    return result;
 };
 
 const getSingleProduct = async (id: string) => {
+    const cached = await redisClient.get(CacheKeys.product(id));
+
+    if (cached) {
+        return JSON.parse(cached);
+    }
+
     const product = await Product.findById(id).populate("categoryId");
 
     if (!product) {
         throw new AppError(404, "Product not found");
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    // store in cache
+    await redisClient.set(
+        CacheKeys.product(id),
+        JSON.stringify(product),
+        {
+            EX: 1800, //? 30 min
+        }
+    );
 
-    // Use .set() to ensure Mongoose tracks the change correctly
-    if (!product.analytics) {
-        product.set("analytics", { totalClicks: 0, clicksByDate: [] });
-    }
-    const analytics = product.analytics!;
-    analytics.totalClicks += 1;
+    // 🚀 analytics ONLY ON CACHE MISS
+    setImmediate(async () => {
+        try {
+            const today = new Date().toISOString().split("T")[0];
 
-    const existingDay = analytics.clicksByDate.find((item) => {
-        return String(item.date).split("T")[0] === today;
+            await Product.updateOne(
+                { _id: id },
+                {
+                    $inc: {
+                        "analytics.totalClicks": 1,
+                    },
+                }
+            );
+
+            await Product.updateOne(
+                {
+                    _id: id,
+                    "analytics.clicksByDate.date": today,
+                },
+                {
+                    $inc: {
+                        "analytics.clicksByDate.$.count": 1,
+                    },
+                }
+            );
+
+            await Product.updateOne(
+                {
+                    _id: id,
+                    "analytics.clicksByDate.date": { $ne: today },
+                },
+                {
+                    $push: {
+                        "analytics.clicksByDate": {
+                            date: today,
+                            count: 1,
+                        },
+                    },
+                }
+            );
+
+            // ⚡ ONLY clear dashboard when analytics is actually updated
+            await clearDashboardCache();
+        } catch (err) {
+            console.error("Analytics update failed:", err);
+        }
     });
-
-    if (existingDay) {
-        existingDay.count += 1;
-    } else {
-        analytics.clicksByDate.push({ date: today, count: 1 });
-    }
-
-    // Tell Mongoose the nested analytics object was mutated
-    product.markModified("analytics");
-
-    await product.save();
 
     return product;
 };
@@ -94,6 +162,9 @@ const updateProduct = async (id: string, input: UpdateProductInput) => {
         );
     }
 
+    await clearProductCache(id);
+    await clearDashboardCache();
+
     await logActivity(
         ActivityMethod.UPDATE,
         `Updated product: ${product!.name}`,
@@ -105,19 +176,27 @@ const updateProduct = async (id: string, input: UpdateProductInput) => {
 const deleteProduct = async (id: string) => {
     const product = await Product.findByIdAndDelete(id);
 
-    if (!product) throw new AppError(404, "Product not found");
+    if (!product) {
+        throw new AppError(404, "Product not found");
+    }
 
-    // Delete all images from Cloudinary
     if (product.images.length > 0) {
         await Promise.all(
             product.images.map((img) => deleteFileFromCloudinary(img)),
         );
     }
 
+    await clearProductCache(id);
+    await clearDashboardCache();
+
     await logActivity(
         ActivityMethod.DELETE,
         `Deleted product: ${product.name}`,
     );
+
+    return {
+        message: "Product deleted successfully",
+    };
 };
 
 export const ProductService = {
