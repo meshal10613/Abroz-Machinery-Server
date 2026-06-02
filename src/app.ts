@@ -18,13 +18,26 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
     cors({
-        origin: [
-            "http://localhost:3000",
-            "https://abroz-admin-dashboard.vercel.app",
-        ],
+        origin: (origin, callback) => {
+            const allowedOrigins = [
+                "http://localhost:3000",
+                "https://abroz-admin-dashboard.vercel.app",
+            ];
+
+            // Allow requests with no origin (mobile apps, Postman, curl)
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            callback(new Error(`CORS: origin '${origin}' not allowed`));
+        },
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-        allowedHeaders: ["*"], //? 🔥 allow all headers
+        allowedHeaders: ["*"],
     }),
 );
 
