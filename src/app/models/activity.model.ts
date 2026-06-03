@@ -23,4 +23,10 @@ const ActivitySchema = new Schema(
     { timestamps: true },
 );
 
+// Delete documents 30 days after createdAt
+ActivitySchema.index(
+    { createdAt: 1 },
+    { expireAfterSeconds: 30 * 24 * 60 * 60 } // 30 days
+);
+
 export const Activity = mongoose.model("Activity", ActivitySchema);

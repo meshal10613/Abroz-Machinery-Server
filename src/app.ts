@@ -22,6 +22,7 @@ app.use(
             const allowedOrigins = [
                 "http://localhost:3000",
                 "https://abroz-admin-dashboard.vercel.app",
+                "https://abroz-admin-dashboard-with-api.vercel.app",
             ];
 
             // Allow requests with no origin (mobile apps, Postman, curl)

@@ -1,6 +1,7 @@
 import { CacheKeys } from "../../cache/cache.keys";
 import { redisClient } from "../../config/redis";
 import { Admin } from "../../models/admin.model";
+import { Activity } from "../../models/activity.model";
 import { Category } from "../../models/category.model";
 import { Product } from "../../models/product.model";
 import { DashboardStats } from "./stats.interface";
@@ -27,6 +28,9 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
 
     const thirtyDaysAgo = new Date(todayStart);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const sevenDaysAgo = new Date(todayStart);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
     const todayStr = now.toISOString().split("T")[0];
     const yesterdayStr = yesterdayStart.toISOString().split("T")[0];
@@ -112,6 +116,13 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
         .populate({ path: "categoryId", select: "name" })
         .lean();
 
+    const activitiesLast7Days = await Activity.find({
+        createdAt: { $gte: sevenDaysAgo },
+    })
+        .sort({ createdAt: -1 })
+        .select("method description createdAt")
+        .lean();
+
     const result: DashboardStats = {
         products: {
             total: totalProducts,
@@ -134,6 +145,12 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
             growthPercent: calcGrowth(todayMessenger, yesterdayMessenger),
         },
         productClicksLast30Days: clickAggregation,
+        activitiesLast7Days: activitiesLast7Days.map((activity) => ({
+            id: String(activity._id),
+            method: activity.method,
+            description: activity.description,
+            createdAt: activity.createdAt,
+        })),
         topViewedProducts: topProducts.map((p) => {
             const todayProductClicks =
                 p.analytics?.clicksByDate?.find(
