@@ -25,10 +25,6 @@ const verifyEmailSchema = z.object({
 
 const resetPasswordSchema = z.object({
     email: z.string().min(1, "Email is required").email("Invalid email format"),
-    otp: z
-        .string()
-        .min(1, "OTP is required")
-        .regex(/^\d{6}$/, "OTP must be exactly 6 digits"),
     newPassword: z
         .string()
         .min(1, "New password is required")
