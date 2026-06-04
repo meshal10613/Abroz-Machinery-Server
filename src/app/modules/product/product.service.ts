@@ -1,11 +1,11 @@
 import { QueryBuilder } from "../../builder/queryBuilder";
-import { CacheKeys } from "../../cache/cache.keys";
+// import { CacheKeys } from "../../cache/cache.keys";
 import {
     clearDashboardCache,
     clearProductCache,
 } from "../../cache/cache.service";
 import { deleteFileFromCloudinary } from "../../config/cloudinary";
-import { redisClient } from "../../config/redis";
+// import { redisClient } from "../../config/redis";
 import { logActivity } from "../../helper/activity.helper";
 import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
@@ -40,13 +40,13 @@ const createProduct = async (input: CreateProductInput) => {
 };
 
 const getAllProducts = async (query: ProductsQuery) => {
-    const cacheKey = `products:${JSON.stringify(query)}`;
+    // const cacheKey = `products:${JSON.stringify(query)}`;
 
-    const cached = await redisClient.get(cacheKey);
+    // const cached = await redisClient.get(cacheKey);
 
-    if (cached) {
-        return JSON.parse(cached);
-    }
+    // if (cached) {
+    //     return JSON.parse(cached);
+    // }
 
     const result = await new QueryBuilder({
         model: Product,
@@ -62,19 +62,19 @@ const getAllProducts = async (query: ProductsQuery) => {
         .fields()
         .paginate();
 
-    await redisClient.set(cacheKey, JSON.stringify(result), {
-        EX: 300, // 5 min
-    });
+    // await redisClient.set(cacheKey, JSON.stringify(result), {
+    //     EX: 300, // 5 min
+    // });
 
     return result;
 };
 
 const getSingleProduct = async (id: string) => {
-    const cached = await redisClient.get(CacheKeys.product(id));
+    // const cached = await redisClient.get(CacheKeys.product(id));
 
-    if (cached) {
-        return JSON.parse(cached);
-    }
+    // if (cached) {
+    //     return JSON.parse(cached);
+    // }
 
     const product = await Product.findById(id).populate("categoryId");
 
@@ -83,13 +83,13 @@ const getSingleProduct = async (id: string) => {
     }
 
     // store in cache
-    await redisClient.set(
-        CacheKeys.product(id),
-        JSON.stringify(product),
-        {
-            EX: 1800, //? 30 min
-        }
-    );
+    // await redisClient.set(
+    //     CacheKeys.product(id),
+    //     JSON.stringify(product),
+    //     {
+    //         EX: 1800, //? 30 min
+    //     }
+    // );
 
     // 🚀 analytics ONLY ON CACHE MISS
     setImmediate(async () => {

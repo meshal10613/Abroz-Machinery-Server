@@ -3,7 +3,7 @@ import {
     clearCategoryCache,
     clearDashboardCache,
 } from "../../cache/cache.service";
-import { redisClient } from "../../config/redis";
+// import { redisClient } from "../../config/redis";
 import { logActivity } from "../../helper/activity.helper";
 import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
@@ -34,13 +34,13 @@ const createCategory = async (input: CreateCategoryInput) => {
 };
 
 const getAllCategories = async (query: CategoryQuery) => {
-    const cacheKey = `categories:${JSON.stringify(query)}`;
+    // const cacheKey = `categories:${JSON.stringify(query)}`;
 
-    const cached = await redisClient.get(cacheKey);
+    // const cached = await redisClient.get(cacheKey);
 
-    if (cached) {
-        return JSON.parse(cached);
-    }
+    // if (cached) {
+    //     return JSON.parse(cached);
+    // }
 
     const result = await new QueryBuilder({
         model: Category,
@@ -56,21 +56,21 @@ const getAllCategories = async (query: CategoryQuery) => {
         })
         .paginate();
 
-    await redisClient.set(cacheKey, JSON.stringify(result), {
-        EX: 3600, // 1 hour
-    });
+    // await redisClient.set(cacheKey, JSON.stringify(result), {
+    //     EX: 3600, // 1 hour
+    // });
 
     return result;
 };
 
 const getSingleCategory = async (id: string) => {
-    const cacheKey = `category:${id}`;
+    // const cacheKey = `category:${id}`;
 
-    const cached = await redisClient.get(cacheKey);
+    // const cached = await redisClient.get(cacheKey);
 
-    if (cached) {
-        return JSON.parse(cached);
-    }
+    // if (cached) {
+    //     return JSON.parse(cached);
+    // }
 
     const category = await Category.findById(id).populate("products", "_id");
 
@@ -78,9 +78,9 @@ const getSingleCategory = async (id: string) => {
         throw new AppError(404, "Category not found");
     }
 
-    await redisClient.set(cacheKey, JSON.stringify(category), {
-        EX: 3600, // 1 hour
-    });
+    // await redisClient.set(cacheKey, JSON.stringify(category), {
+    //     EX: 3600, // 1 hour
+    // });
 
     return category;
 };

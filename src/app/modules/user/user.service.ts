@@ -1,6 +1,6 @@
-import { CacheKeys } from "../../cache/cache.keys";
+// import { CacheKeys } from "../../cache/cache.keys";
 import { deleteFileFromCloudinary } from "../../config/cloudinary";
-import { redisClient } from "../../config/redis";
+// import { redisClient } from "../../config/redis";
 import AppError from "../../helper/AppError";
 import { User } from "../../models/user.model";
 import { UpdateUserInput } from "./user.interface";
@@ -22,7 +22,7 @@ const updateUser = async (userId: string, input: UpdateUserInput) => {
     await user.save();
 
     // 🔥 invalidate cache
-    await redisClient.del(CacheKeys.user(userId));
+    // await redisClient.del(CacheKeys.user(userId));
 
     return user;
 };

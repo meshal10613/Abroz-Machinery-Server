@@ -1,5 +1,5 @@
-import { CacheKeys } from "../../cache/cache.keys";
-import { redisClient } from "../../config/redis";
+// import { CacheKeys } from "../../cache/cache.keys";
+// import { redisClient } from "../../config/redis";
 import { Admin } from "../../models/admin.model";
 import { Activity } from "../../models/activity.model";
 import { Category } from "../../models/category.model";
@@ -12,11 +12,11 @@ const calcGrowth = (today: number, yesterday: number): number => {
 };
 
 const getDashboardStats = async (): Promise<DashboardStats> => {
-    const cached = await redisClient.get(CacheKeys.dashboard);
+    // const cached = await redisClient.get(CacheKeys.dashboard);
 
-    if (cached) {
-        return JSON.parse(cached);
-    }
+    // if (cached) {
+    //     return JSON.parse(cached);
+    // }
 
     const now = new Date();
 
@@ -179,13 +179,13 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
     };
 
     // ⚡ cache result
-    await redisClient.set(
-        CacheKeys.dashboard,
-        JSON.stringify(result),
-        {
-            EX: 300, // 5 minutes (BEST for dashboard)
-        },
-    );
+    // await redisClient.set(
+    //     CacheKeys.dashboard,
+    //     JSON.stringify(result),
+    //     {
+    //         EX: 300, // 5 minutes (BEST for dashboard)
+    //     },
+    // );
 
     return result;
 };

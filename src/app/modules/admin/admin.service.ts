@@ -1,6 +1,6 @@
-import { CacheKeys } from "../../cache/cache.keys";
-import { clearDashboardCache } from "../../cache/cache.service";
-import { redisClient } from "../../config/redis";
+// import { CacheKeys } from "../../cache/cache.keys";
+// import { clearDashboardCache } from "../../cache/cache.service";
+// import { redisClient } from "../../config/redis";
 import { logActivity } from "../../helper/activity.helper";
 import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
@@ -8,11 +8,11 @@ import { Admin } from "../../models/admin.model";
 import { UpdateAdminInput, UpdateClickInput } from "./admin.interface";
 
 const getAdminInfo = async () => {
-    const cached = await redisClient.get(CacheKeys.admin("info"));
+    // const cached = await redisClient.get(CacheKeys.admin("info"));
 
-    if (cached) {
-        return JSON.parse(cached);
-    }
+    // if (cached) {
+    //     return JSON.parse(cached);
+    // }
 
     const admin = await Admin.findOne()
         .select("-__v -createdAt -updatedAt -analytics")
@@ -22,9 +22,9 @@ const getAdminInfo = async () => {
         throw new AppError(404, "Admin not found");
     }
 
-    await redisClient.set(CacheKeys.admin("info"), JSON.stringify(admin), {
-        EX: 3600, // 1 hour
-    });
+    // await redisClient.set(CacheKeys.admin("info"), JSON.stringify(admin), {
+    //     EX: 3600, // 1 hour
+    // });
 
     return admin;
 };
@@ -61,7 +61,7 @@ const updateAdminProfile = async (
     await admin.save();
 
     // 🔥 invalidate cache
-    await redisClient.del(CacheKeys.admin("info"));
+    // await redisClient.del(CacheKeys.admin("info"));
 
     await logActivity(
         ActivityMethod.UPDATE,
@@ -129,8 +129,8 @@ const updateAdminClicks = async (input: UpdateClickInput) => {
     await admin.save();
 
     // optional but safe:
-    await redisClient.del(CacheKeys.admin("info"));
-    await clearDashboardCache();
+    // await redisClient.del(CacheKeys.admin("info"));
+    // await clearDashboardCache();
 
     return input.type;
 };

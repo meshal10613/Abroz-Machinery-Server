@@ -1,5 +1,5 @@
-import { CacheKeys } from "../../cache/cache.keys";
-import { redisClient } from "../../config/redis";
+// import { CacheKeys } from "../../cache/cache.keys";
+// import { redisClient } from "../../config/redis";
 import AppError from "../../helper/AppError";
 import { Admin } from "../../models/admin.model";
 import { User } from "../../models/user.model";
@@ -49,13 +49,13 @@ const loginUser = async (input: LoginInput) => {
 };
 
 const getMe = async (userId: string) => {
-    const cacheKey = CacheKeys.me(userId);
+    // const cacheKey = CacheKeys.me(userId);
 
-    const cached = await redisClient.get(cacheKey);
+    // const cached = await redisClient.get(cacheKey);
 
-    if (cached) {
-        return JSON.parse(cached);
-    }
+    // if (cached) {
+    //     return JSON.parse(cached);
+    // }
 
     const user = await User.findById(userId).lean();
 
@@ -78,9 +78,9 @@ const getMe = async (userId: string) => {
         admin: adminData,
     };
 
-    await redisClient.set(cacheKey, JSON.stringify(result), {
-        EX: 1800, // 30 min (safe for auth data)
-    });
+    // await redisClient.set(cacheKey, JSON.stringify(result), {
+    //     EX: 1800, // 30 min (safe for auth data)
+    // });
 
     return result;
 };
@@ -114,7 +114,7 @@ const changePassword = async (
     await user.save();
 
     // 🔥 invalidate auth cache
-    await redisClient.del(CacheKeys.me(userId));
+    // await redisClient.del(CacheKeys.me(userId));
 
     return {
         message: "Password changed successfully",
@@ -191,7 +191,7 @@ const resetPassword = async (
     user.password = newPassword;
     await user.save();
 
-     await redisClient.del(CacheKeys.me(user._id.toString()));
+    // await redisClient.del(CacheKeys.me(user._id.toString()));
 
     return {
         message: "Password reset successfully",

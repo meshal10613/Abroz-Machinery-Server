@@ -18,10 +18,10 @@ const requiredEnv = (key: string) => {
 };
 
 export const env = {
-    socket: {
-        host: requiredEnv("REDIS_HOST"),
-        port: Number(requiredEnv("REDIS_PORT")),
-    },
+    // socket: {
+    //     host: requiredEnv("REDIS_HOST"),
+    //     port: Number(requiredEnv("REDIS_PORT")),
+    // },
     port: requiredEnv("PORT"),
     mongoUri: requiredEnv("MONGO_URI"),
     jwtSecret: requiredEnv("JWT_SECRET"),

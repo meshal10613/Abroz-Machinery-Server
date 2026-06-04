@@ -4,11 +4,11 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)](https://mongoosejs.com/)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+<!-- [![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io/) -->
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-A production-ready RESTful API server for the **Abroz Machinery** platform — a machinery catalogue and admin management system. Built with **Express 5**, **TypeScript**, **MongoDB**, and **Redis**, featuring JWT authentication, Cloudinary image storage, OTP-based password recovery, and a full analytics/dashboard engine.
+A production-ready RESTful API server for the **Abroz Machinery** platform — a machinery catalogue and admin management system. Built with **Express 5**, **TypeScript**, and **MongoDB**, featuring JWT authentication, Cloudinary image storage, OTP-based password recovery, and a full analytics/dashboard engine.
 
 ---
 
@@ -58,7 +58,7 @@ A production-ready RESTful API server for the **Abroz Machinery** platform — a
 - **Cloudinary Integration** — Automatic image upload and cleanup on update/delete
 - **Dashboard Analytics** — Products, categories, WhatsApp/Messenger click counts with day-over-day growth percentages and a 30-day click trend chart
 - **Admin Seeding** — First-run auto-seed of the admin user from environment variables
-- **Redis** — Ready for caching and session management
+<!-- - **Redis** — Ready for caching and session management -->
 - **Nginx Load Balancer** — Docker Compose spins up 5 replicas behind an Nginx reverse proxy
 - **Global Error Handling** — Zod validation errors, `AppError`, and unexpected errors all return consistent JSON responses
 
@@ -72,7 +72,7 @@ A production-ready RESTful API server for the **Abroz Machinery** platform — a
 | Language | TypeScript 5 |
 | Framework | Express 5 |
 | Database | MongoDB via Mongoose 9 |
-| Cache | Redis 7 |
+<!-- | Cache | Redis 7 | -->
 | Auth | JSON Web Tokens (`jsonwebtoken`) |
 | Password Hashing | `bcryptjs` |
 | Image Storage | Cloudinary + `multer-storage-cloudinary` |
@@ -89,7 +89,7 @@ A production-ready RESTful API server for the **Abroz Machinery** platform — a
 ```
 src/
 ├── app.ts                        # Express app setup
-├── server.ts                     # Entry point — DB connect, Redis connect, listen
+├── server.ts                     # Entry point — DB connect, listen
 └── app/
     ├── builder/
     │   └── queryBuilder.ts       # Chainable query builder (search, filter, paginate, fields, populate)
@@ -97,7 +97,7 @@ src/
     │   ├── env.ts                # Validated environment config (throws on missing vars)
     │   ├── cloudinary.ts         # Cloudinary SDK setup + delete helper
     │   ├── multer.ts             # Multer + Cloudinary storage config
-    │   └── redis.ts              # Redis client
+    │   # └── redis.ts            # Redis client
     ├── helper/
     │   ├── AppError.ts           # Custom HTTP error class
     │   ├── activity.helper.ts    # Activity log writer
@@ -176,11 +176,11 @@ SMTP_PASS=your_smtp_password
 SMTP_FROM=no-reply@example.com
 
 # Redis
-REDIS_HOST=127.0.0.1   # use "redis" when running inside Docker Compose
-REDIS_PORT=6379
+# REDIS_HOST=127.0.0.1   # use "redis" when running inside Docker Compose
+# REDIS_PORT=6379
 ```
 
-> **Note:** When running via Docker Compose, set `REDIS_HOST=redis` to use the container's internal network hostname.
+<!-- > **Note:** When running via Docker Compose, set `REDIS_HOST=redis` to use the container's internal network hostname. -->
 
 ---
 
@@ -362,7 +362,7 @@ All endpoints are prefixed with `/api/v1`. The root path `GET /` returns a healt
 - [Node.js 22+](https://nodejs.org/)
 - [pnpm](https://pnpm.io/) (`npm install -g pnpm`)
 - A running [MongoDB](https://www.mongodb.com/try/download/community) instance (local or Atlas)
-- A running [Redis](https://redis.io/docs/getting-started/) instance
+<!-- - A running [Redis](https://redis.io/docs/getting-started/) instance -->
 - A [Cloudinary](https://cloudinary.com/) account
 
 ### 1. Clone the repository
@@ -406,7 +406,7 @@ pnpm start       # runs the compiled output
 
 ## Running with Docker
 
-The Docker setup includes **5 app replicas**, a **Redis** container, and an **Nginx** reverse proxy with load balancing — all orchestrated by Docker Compose.
+The Docker setup includes **5 app replicas** and an **Nginx** reverse proxy with load balancing — all orchestrated by Docker Compose.
 
 ### Prerequisites
 
@@ -424,7 +424,7 @@ cd Abroz-Machinery-Server--
 ```bash
 cp .env.example .env
 # Fill in all required values.
-# Important: set REDIS_HOST=redis (not 127.0.0.1) for Docker networking
+# Important: REDIS_HOST is disabled because Redis is commented out
 ```
 
 ### 3. Build and start all services
@@ -436,7 +436,7 @@ docker compose up --build
 This will:
 - Build the Node.js app image from the `Dockerfile`
 - Start **5 replicas** of the app container (port `5000` exposed internally)
-- Start a **Redis 7** container with persistent volume (`redis_data`)
+<!-- - Start a **Redis 7** container with persistent volume (`redis_data`) -->
 - Start an **Nginx** container on port **80**, load-balancing across all app replicas
 
 ### 4. Access the API
@@ -463,7 +463,7 @@ docker compose logs -f app
 # Stop all services
 docker compose down
 
-# Stop and remove volumes (including Redis data)
+# Stop and remove volumes
 docker compose down -v
 
 #
@@ -487,7 +487,7 @@ Nginx (port 80)
   └─► App Replica 5 :5000
          │
          ├── MongoDB Atlas (cloud)
-         ├── Redis (container / local)
+         # ├── Redis (container / local)
          └── Cloudinary (cloud CDN)
 ```
 
@@ -503,7 +503,7 @@ HTTP Request
     → authorize(role) — checks UserRole
     → Controller
       → Service (business logic)
-        → Mongoose / Redis / Cloudinary
+        → Mongoose / Cloudinary
       → sendResponse() — uniform JSON envelope
   → globalErrorHandler (catches all thrown errors)
   → notFound (404 catch-all)
