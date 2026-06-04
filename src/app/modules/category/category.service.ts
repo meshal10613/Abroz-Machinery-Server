@@ -8,6 +8,7 @@ import { logActivity } from "../../helper/activity.helper";
 import AppError from "../../helper/AppError";
 import { ActivityMethod } from "../../models/activity.model";
 import { Category } from "../../models/category.model";
+import { Product } from "../../models/product.model";
 import {
     CategoryQuery,
     CreateCategoryInput,
@@ -105,14 +106,18 @@ const updateCategory = async (id: string, input: UpdateCategoryInput) => {
 };
 
 const deleteCategory = async (id: string) => {
-    const category = await Category.findByIdAndDelete(id);
+    const category = await Category.findById(id);
 
     if (!category) {
         throw new AppError(404, "Category not found");
     }
 
-    await clearCategoryCache(id);
-    await clearDashboardCache();
+    await Product.deleteMany({
+        categoryId: category._id,
+    });
+
+    await Category.findByIdAndDelete(id);
+
     await logActivity(
         ActivityMethod.DELETE,
         `Deleted category: ${category.name}`,

@@ -163,11 +163,12 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
                     (d) =>
                         String(d.date).split("T")[0] === yesterdayStr,
                 )?.count ?? 0;
-
+            console.log("Product name",p.name)
+            console.log("Category name",(p.categoryId as any).name)
             return {
                 id: String(p._id),
-                name: p.name,
-                category: (p.categoryId as any).name,
+                name: p.name ?? "",
+                category: (p.categoryId as any).name ?? "",
                 images: p.images ?? [],
                 totalClicks: p.analytics?.totalClicks ?? 0,
                 growthPercent: calcGrowth(
