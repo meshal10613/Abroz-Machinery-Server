@@ -20,6 +20,15 @@ export const uploadFileToCloudinary = async (
         );
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+    if (buffer.length > MAX_FILE_SIZE) {
+        throw new AppError(
+            status.BAD_REQUEST,
+            "Image size must be less than 5 MB",
+        );
+    }
+
     const extension = fileName.split(".").pop()?.toLocaleLowerCase();
 
     const fileNameWithoutExtension = fileName
@@ -39,7 +48,6 @@ export const uploadFileToCloudinary = async (
         fileNameWithoutExtension;
 
     const folder = extension === "pdf" ? "pdfs" : "images";
-
 
     return new Promise((resolve, reject) => {
         cloudinary.uploader

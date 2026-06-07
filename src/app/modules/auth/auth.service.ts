@@ -73,6 +73,7 @@ const getMe = async (userId: string) => {
         id: user._id.toString(),
         name: user.name,
         email: user.email,
+        image: user.image,
         role: user.role,
         isActive: user.isActive,
         admin: adminData,
