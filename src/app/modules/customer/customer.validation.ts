@@ -10,4 +10,13 @@ const createCustomerSchema = z.object({
     mobileNumber: z.string().trim().min(1, "Mobile number is required"),
 });
 
-export const customerValidation = { createCustomerSchema };
+const updateCustomerSchema = createCustomerSchema
+    .partial()
+    .refine((data) => Object.keys(data).length > 0, {
+        message: "At least one field (name or mobileNumber) must be provided for update",
+    });
+
+export const customerValidation = {
+    createCustomerSchema,
+    updateCustomerSchema,
+};

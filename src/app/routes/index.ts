@@ -8,6 +8,7 @@ import { productRoutes } from "../modules/product/product.routes";
 import mongoose from "mongoose";
 import status from "http-status";
 import { customerRoutes } from "../modules/customer/customer.routes";
+import { broadcastRoutes } from "../modules/broadcast/broadcast.routes";
 
 const router = Router();
 
@@ -48,6 +49,10 @@ const routes: { path: string; route: Router }[] = [
     {
         path: "/customer",
         route: customerRoutes,
+    },
+    {
+        path: "/broadcast",
+        route: broadcastRoutes,
     },
 ];
 
