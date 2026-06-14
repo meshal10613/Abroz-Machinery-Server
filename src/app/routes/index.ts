@@ -7,6 +7,7 @@ import { userRoutes } from "../modules/user/user.routes";
 import { productRoutes } from "../modules/product/product.routes";
 import mongoose from "mongoose";
 import status from "http-status";
+import { customerRoutes } from "../modules/customer/customer.routes";
 
 const router = Router();
 
@@ -43,6 +44,10 @@ const routes: { path: string; route: Router }[] = [
     {
         path: "/product",
         route: productRoutes,
+    },
+    {
+        path: "/customer",
+        route: customerRoutes,
     },
 ];
 
