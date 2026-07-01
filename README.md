@@ -4,536 +4,883 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)](https://mongoosejs.com/)
-<!-- [![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io/) -->
+[![iSMS](https://img.shields.io/badge/SMS-iSMS_Malaysia-FF8C00?logo=message&logoColor=white)](https://www.isms.com.my/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-A production-ready RESTful API server for the **Abroz Machinery** platform — a machinery catalogue and admin management system. Built with **Express 5**, **TypeScript**, and **MongoDB**, featuring JWT authentication, Cloudinary image storage, OTP-based password recovery, and a full analytics/dashboard engine.
+A production-ready, highly modular RESTful API server for the **Abroz Machinery** platform—a machinery catalogue, customer directory, and communications hub. Built with **Express 5**, **TypeScript**, and **MongoDB**, featuring JWT authentication, Cloudinary storage, OTP-based password recovery, personalized iSMS bulk broadcasts, and a complete stats dashboard engine.
 
 ---
 
 ## Table of Contents
 
 - [Abroz Machinery Server](#abroz-machinery-server)
-  - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Tech Stack](#tech-stack)
+  - [System Architecture](#system-architecture)
+    - [Request Pipeline](#request-pipeline)
+    - [Authentication \& Authorization Flow](#authentication--authorization-flow)
   - [Project Structure](#project-structure)
   - [Environment Variables](#environment-variables)
-  - [API Reference](#api-reference)
-    - [Auth Routes — `/api/v1/auth`](#auth-routes--apiv1auth)
-    - [User Routes — `/api/v1/user`](#user-routes--apiv1user)
-    - [Admin Routes — `/api/v1/admin`](#admin-routes--apiv1admin)
-    - [Category Routes — `/api/v1/category`](#category-routes--apiv1category)
-    - [Product Routes — `/api/v1/product`](#product-routes--apiv1product)
-    - [Stats Routes — `/api/v1/stats`](#stats-routes--apiv1stats)
-  - [Getting Started — Local Development](#getting-started--local-development)
-    - [Prerequisites](#prerequisites)
-    - [1. Clone the repository](#1-clone-the-repository)
-    - [2. Install dependencies](#2-install-dependencies)
-    - [3. Configure environment variables](#3-configure-environment-variables)
-    - [4. Run the development server](#4-run-the-development-server)
-    - [5. Build for production](#5-build-for-production)
+  - [Routing System \& API Reference](#routing-system--api-reference)
+    - [Global Request/Response Configurations](#global-requestresponse-configurations)
+    - [System Warmup Endpoint](#system-warmup-endpoint)
+    - [Auth Endpoints — `/api/v1/auth`](#auth-endpoints---apiv1auth)
+    - [User Endpoints — `/api/v1/user`](#user-endpoints---apiv1user)
+    - [Admin Profile Endpoints — `/api/v1/admin`](#admin-profile-endpoints---apiv1admin)
+    - [Category Endpoints — `/api/v1/category`](#category-endpoints---apiv1category)
+    - [Product Endpoints — `/api/v1/product`](#product-endpoints---apiv1product)
+    - [Customer Endpoints — `/api/v1/customer`](#customer-endpoints---apiv1customer)
+    - [SMS Broadcast Endpoints — `/api/v1/broadcast`](#sms-broadcast-endpoints---apiv1broadcast)
+    - [Dashboard Stats Endpoints — `/api/v1/stats`](#dashboard-stats-endpoints---apiv1stats)
+  - [Getting Started — Local Development](#getting-started---local-development)
   - [Running with Docker](#running-with-docker)
-    - [Prerequisites](#prerequisites-1)
-    - [1. Clone the repository](#1-clone-the-repository-1)
-    - [2. Configure environment variables](#2-configure-environment-variables)
-    - [3. Build and start all services](#3-build-and-start-all-services)
-    - [4. Access the API](#4-access-the-api)
-    - [5. Useful Docker commands](#5-useful-docker-commands)
-  - [Architecture Overview](#architecture-overview)
-  - [Authentication \& Authorization](#authentication--authorization)
-  - [CORS](#cors)
+  - [CORS Whitelist](#cors-whitelist)
   - [License](#license)
 
 ---
 
 ## Features
 
-- **JWT Authentication** — Secure login with access tokens delivered via HTTP-only cookies
-- **OTP Password Recovery** — Email-based one-time password flow for forgotten passwords
-- **Role-Based Access Control** — `ADMIN` role guard on protected routes
-- **Product Catalogue** — Full CRUD with multi-image upload (up to 5 images per product), search, filter, pagination, and per-product view analytics
-- **Category Management** — Hierarchical product categorisation with admin-only write access
-- **Cloudinary Integration** — Automatic image upload and cleanup on update/delete
-- **Dashboard Analytics** — Products, categories, WhatsApp/Messenger click counts with day-over-day growth percentages and a 30-day click trend chart
-- **Admin Seeding** — First-run auto-seed of the admin user from environment variables
-<!-- - **Redis** — Ready for caching and session management -->
-- **Nginx Load Balancer** — Docker Compose spins up 5 replicas behind an Nginx reverse proxy
-- **Global Error Handling** — Zod validation errors, `AppError`, and unexpected errors all return consistent JSON responses
+- **JWT Authentication via HTTP-Only Cookies**: Secure session management. The server issues JWT access tokens stored exclusively in client-side cookies with `httpOnly`, `secure`, and `sameSite: none` properties to eliminate XSS token leakage.
+- **OTP Password Recovery**: Automated 6-digit verification code generation delivered via EJS-templated HTML email (Nodemailer/SMTP), enabling secure password resets.
+- **Role-Based Access Control**: Route guarding mechanism backing up administrative actions with a strict `UserRole.ADMIN` check.
+- **Dynamic Query Engine (QueryBuilder)**: Powerful pagination (`page`/`limit`), text search across multiple fields, sorting, field projection, and numerical range filtering (e.g. `minQuantity`/`maxQuantity` translating to `$gte`/`$lte`).
+- **Product Catalogue Management**: Complete CRUD operations, supporting multi-image uploads (up to 5 images) directly streamed to Cloudinary, with automatic asset purging from Cloudinary upon product modification or deletion.
+- **Customer Directory**: Secure contact hub managing names and mobile numbers.
+- **Personalized Bulk SMS (iSMS)**: Integrate directly with iSMS Malaysia JSON API to dispatch bulk messages (supporting chunks of 50, automatic ASCII/Unicode detection). Incorporates template variable substitution to personalize message bodies (replacing `[name]` placeholders with customer names).
+- **Dashboard Analytics & Activity Logging**: Day-over-day growth percentages, 30-day product click trends, top viewed products, and administrative activity logs.
+- **Admin Auto-Seeding**: Idempotent administrative user generation on application initialization, using environment properties.
+- **Nginx Reverse Proxy & Load Balancing**: Pre-configured Docker Compose setup firing up 5 scaled replicas behind an Nginx reverse proxy.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | Node.js 22 (Alpine) |
-| Language | TypeScript 5 |
-| Framework | Express 5 |
-| Database | MongoDB via Mongoose 9 |
-<!-- | Cache | Redis 7 | -->
-| Auth | JSON Web Tokens (`jsonwebtoken`) |
-| Password Hashing | `bcryptjs` |
-| Image Storage | Cloudinary + `multer-storage-cloudinary` |
-| Email | Nodemailer (SMTP) with EJS templates |
-| Validation | Zod 4 |
-| Build Tool | `tsup` (esbuild-based) |
-| Containerisation | Docker + Docker Compose + Nginx |
-| Package Manager | pnpm |
+| Layer | Technology | Description |
+|---|---|---|
+| **Runtime Environment** | Node.js 22 (Alpine-based in Docker) | Performance & security-focused JS runtime |
+| **Development Language**| TypeScript 5.x | Typings and structure |
+| **Web Framework** | Express 5.x | Minimalist RESTful framework |
+| **Database ODM** | Mongoose 9.x (MongoDB Atlas) | Database modeling |
+| **Image Hosting** | Cloudinary | Asset delivery CDN |
+| **Storage Middleware**  | Multer (`multer-storage-cloudinary`)| Multipart/form-data processing |
+| **Validation Layer**    | Zod 4.x | Safe schema validation & type inference |
+| **Email Service**       | Nodemailer + EJS templates | OTP transmission |
+| **SMS Gateway**         | iSMS Malaysia JSON API | SMS dispatch |
+| **Containerisation**   | Docker + Docker Compose + Nginx | Local clustering and load balancing |
+| **Package Manager**     | pnpm | Disk space and dependency efficiency |
+
+---
+
+## System Architecture
+
+### Request Pipeline
+
+All HTTP requests sent to the server flow through the following middleware stack:
+
+```mermaid
+graph TD
+    Client[Client Request] --> CookieParser[Cookie Parser Middleware]
+    CookieParser --> BodyParser[JSON & URL-Encoded Body Parsers]
+    BodyParser --> CORS[CORS Guard]
+    CORS --> Router[Express Router /api/v1/*]
+    Router --> AuthGuard{Authenticate Middleware}
+    AuthGuard -- "No Cookie" --> Err401[401 Unauthorized Response]
+    AuthGuard -- "Valid Cookie" --> RoleGuard{Authorize Role Guard}
+    RoleGuard -- "Role Mismatch" --> Err403[403 Forbidden Response]
+    RoleGuard -- "Authorized" --> Validation{Zod Validation Middleware}
+    Validation -- "Parse Fail" --> CleanUp[Cloudinary File Cleanup]
+    CleanUp --> Err400[400 Bad Request Response]
+    Validation -- "Parse Success" --> Controller[Controller Logic]
+    Controller --> Service[Service / Business Layer]
+    Service --> Database[(Mongoose MongoDB)]
+    Service --> Cloudinary[Cloudinary CDN]
+    Service --> SMSGateway[iSMS Malaysia API]
+    Controller --> Success[sendResponse 200/201]
+    globalErrorHandler[Global Error Handler] -. "Catches Thrown Errors" .-> Router
+```
+
+### Authentication & Authorization Flow
+
+Authentication is stateless and managed via signed JWT tokens passed through client cookies.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Admin Client
+    participant Server as Express Server
+    participant DB as MongoDB Atlas
+
+    Admin->>Server: POST /api/v1/auth/login {email, password}
+    Server->>DB: Find user and verify password
+    DB-->>Server: User details
+    Server->>Server: Sign JWT token
+    Server-->>Admin: Set HTTP-Only Cookie (token) + JSON response with user & token
+    
+    Note over Admin,Server: Authenticated Request Flow
+    Admin->>Server: GET /api/v1/product/ (with Cookie)
+    Server->>Server: Extract token from Cookie
+    Server->>Server: Verify JWT signature & expiration
+    Server->>Server: Authorize role (UserRole.ADMIN)
+    Server->>DB: Fetch products
+    DB-->>Server: Products list
+    Server-->>Admin: sendResponse(200, products)
+```
 
 ---
 
 ## Project Structure
 
+The project implements a modular structure where each business entity is isolated in its own folder under `src/app/modules/`.
+
 ```
 src/
-├── app.ts                        # Express app setup
-├── server.ts                     # Entry point — DB connect, listen
+├── app.ts                        # Express app and middleware setup
+├── server.ts                     # Main entry point (DB connection & listen)
 └── app/
     ├── builder/
-    │   └── queryBuilder.ts       # Chainable query builder (search, filter, paginate, fields, populate)
+    │   └── queryBuilder.ts       # Utility for mongoose querying (search, filter, pagination, etc.)
     ├── config/
-    │   ├── env.ts                # Validated environment config (throws on missing vars)
-    │   ├── cloudinary.ts         # Cloudinary SDK setup + delete helper
-    │   ├── multer.ts             # Multer + Cloudinary storage config
-    │   # └── redis.ts            # Redis client
+    │   ├── env.ts                # Validates & exports environment configuration
+    │   ├── cloudinary.ts         # Cloudinary configuration & file deletion helper
+    │   └── multer.ts             # Multer setup integrated with Cloudinary storage
     ├── helper/
-    │   ├── AppError.ts           # Custom HTTP error class
-    │   ├── activity.helper.ts    # Activity log writer
-    │   └── handleZodError.ts     # Zod error → standard error shape
+    │   ├── AppError.ts           # Extended Error class supporting HTTP status codes
+    │   ├── activity.helper.ts    # Centralized admin activity logger helper
+    │   └── handleZodError.ts     # Maps Zod validation issues into uniform error arrays
     ├── interface/
-    │   └── error.interface.ts    # Shared error response interface
+    │   └── error.interface.ts    # TypeScript definitions for error response payloads
     ├── middlewares/
-    │   ├── globalErrorHandler.ts # Central error handler (Zod, AppError, unknown)
-    │   ├── notFound.ts           # 404 catch-all
-    │   ├── zodValidation.ts      # Zod validation middleware
-    │   └── zodValidationWithCleanup.ts # Zod validation + Cloudinary cleanup on failure
+    │   ├── globalErrorHandler.ts # Catches all uncaught/explicitly thrown errors
+    │   ├── notFound.ts           # Catch-all router handler (404)
+    │   ├── zodValidation.ts      # Standard schema validation middleware
+    │   └── zodValidationWithCleanup.ts # Validation helper executing Cloudinary deletions on schema failures
     ├── models/
-    │   ├── admin.model.ts        # Admin profile + WhatsApp/Messenger analytics
-    │   ├── user.model.ts         # User (bcrypt pre-save hook, comparePassword method)
-    │   ├── product.model.ts      # Product with per-day click analytics
-    │   ├── category.model.ts     # Product category
-    │   ├── activity.model.ts     # Admin activity log
-    │   └── stats.model.ts        # General stats schema
+    │   ├── admin.model.ts        # Admin profile schema (contains direct contact analytics)
+    │   ├── user.model.ts         # Core User credential schema (handles password hashing)
+    │   ├── product.model.ts      # Product schema including click histories
+    │   ├── category.model.ts     # Category schema
+    │   ├── customer.model.ts     # Customer directory schema
+    │   ├── broadcastHistory.model.ts # Bulk SMS dispatch logs schema
+    │   ├── activity.model.ts     # Admin action history log schema
+    │   └── stats.model.ts        # Analytics subdocuments
     ├── modules/
-    │   ├── auth/                 # Login, password recovery, OTP verify, change password
-    │   ├── admin/                # Admin profile info, update, click tracking
-    │   ├── user/                 # User profile update (with avatar upload)
-    │   ├── category/             # Category CRUD
-    │   ├── product/              # Product CRUD + image upload + click analytics
+    │   ├── auth/                 # Login, password recovery, profile retrieval, password modification
+    │   ├── admin/                # Public/private settings, social links, contact click updates
+    │   ├── user/                 # Profile modifications (avatar, name)
+    │   ├── category/             # Category CRUD operations
+    │   ├── product/              # Product CRUD, multi-image streaming, and view tracking
+    │   ├── customer/             # Customer registry CRUD operations
+    │   ├── broadcast/            # Personalized bulk SMS dispatch via iSMS Malaysia
     │   └── stats/                # Dashboard analytics aggregation
     ├── routes/
-    │   └── index.ts              # Central route aggregator → /api/v1
+    │   └── index.ts              # Route registry (prefixes sub-modules onto /api/v1)
     ├── seeds/
-    │   └── admin.seed.ts         # Idempotent admin user seeder
+    │   └── admin.seed.ts         # Automatically populates default Admin credentials
     ├── shared/
-    │   ├── catchAsync.ts         # Async route wrapper
-    │   └── sendResponse.ts       # Uniform JSON response helper
+    │   ├── catchAsync.ts         # Wrapper to delegate promise rejections to globalErrorHandler
+    │   └── sendResponse.ts       # Utility ensuring consistent outgoing JSON shape
     ├── templates/
-    │   └── otp.ejs               # HTML email template for OTP delivery
-    ├── types/                    # Shared TypeScript types
+    │   └── otp.ejs               # EJS template used for OTP emails
+    ├── types/                    # Shared typings (User, Product, Query, Admin, etc.)
     └── utils/
-        ├── cookie.ts             # Cookie options helper
-        ├── email.ts              # Nodemailer send helper
-        ├── generateOtp.ts        # OTP + expiry generator
-        ├── jwt.ts                # JWT sign / verify wrappers
-        └── token.ts              # Token generation helper
+        ├── cookie.ts             # Express cookie manipulations
+        ├── email.ts              # Nodemailer utility config
+        ├── generateOtp.ts        # 6-digit OTP code & expiration generator
+        ├── jwt.ts                # Token signing & verification wrappers
+        ├── token.ts              # Express-specific cookie setting helpers
+        └── sms.ts                # iSMS Malaysia API integration (personalization & batching)
 ```
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in all values. Every variable is required — the server throws on startup if any are missing.
+Copy `.env.example` to `.env` and fill in all properties. All values are validated during application startup, and execution will halt if any variables are missing.
 
 ```env
-# Server
-PORT=5000
+# Server Configuration
+PORT=5000                         # Port to launch the Express server
 
-# MongoDB
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/abroz
+# Database Configuration
+MONGO_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/abroz
 
-# JWT
-JWT_SECRET=your_super_secret_key
-JWT_EXPIRES_IN=7d
+# JWT Configuration
+JWT_SECRET=your_super_secret_jwt_key
+JWT_EXPIRES_IN=7d                  # Duration of token validity (e.g. 7d, 24h, 1h)
 
-# Default admin (auto-seeded on first run)
+# Default Administrator Seeding (Generated on first run)
 ADMIN_NAME=Admin
 ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=securepassword
+ADMIN_PASSWORD=secure_seed_password
 
-# Cloudinary
+# Cloudinary Integration
 CLOUDINARY_CLOUDE_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
-# SMTP (email / OTP)
-SMTP_HOST=smtp.example.com
+# SMTP Email Settings (OTP dispatch)
+SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=you@example.com
-SMTP_PASS=your_smtp_password
-SMTP_FROM=no-reply@example.com
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_gmail_app_password
+SMTP_FROM=no-reply@abrozmachinery.com
 
-# Redis
-# REDIS_HOST=127.0.0.1   # use "redis" when running inside Docker Compose
-# REDIS_PORT=6379
+# iSMS Malaysia Gateway Credentials (https://www.isms.com.my/)
+ISMS_USERNAME=your_isms_username
+ISMS_SECRET_KEY=your_isms_api_secret_key
+ISMS_BASE_URL=https://www.isms.com.my
 ```
 
-<!-- > **Note:** When running via Docker Compose, set `REDIS_HOST=redis` to use the container's internal network hostname. -->
-
 ---
 
-## API Reference
+## Routing System & API Reference
 
-All endpoints are prefixed with `/api/v1`. The root path `GET /` returns a health-check JSON with the process PID and hostname.
+All application endpoints are prefixed with `/api/v1`.
 
----
+### Global Request/Response Configurations
 
-### Auth Routes — `/api/v1/auth`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/login` | Public | Authenticate with email + password. Returns a JWT and user object. Sets an HTTP-only cookie. |
-| `POST` | `/forget-password` | Public | Send a 6-digit OTP to the user's email for password recovery. |
-| `POST` | `/verify-email` | Public | Verify the OTP received via email. Must be done before resetting the password. |
-| `POST` | `/reset-password` | Public | Reset the password after OTP verification. |
-| `GET` | `/me` | 🔒 Admin | Return the currently authenticated user's profile (merged with admin data if applicable). |
-| `PATCH` | `/change-password` | 🔒 Admin | Change the current user's password (requires current password + new password). |
-
-**`POST /login` — Request Body**
+#### Success Response Structure
+All successful endpoints return a JSON payload with a `200` or `201` status code:
 ```json
 {
-  "email": "admin@example.com",
-  "password": "securepassword"
+  "success": true,
+  "message": "Information indicating response status",
+  "data": {},        // Array or Object response data
+  "meta": {          // Provided exclusively on paginated requests
+    "total": 120,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 12
+  }
 }
 ```
 
-**`POST /forget-password` — Request Body**
-```json
-{ "email": "admin@example.com" }
-```
-
-**`POST /verify-email` — Request Body**
-```json
-{ "email": "admin@example.com", "otp": "482910" }
-```
-
-**`POST /reset-password` — Request Body**
-```json
-{ "email": "admin@example.com", "newPassword": "newSecurePass123" }
-```
-
-**`PATCH /change-password` — Request Body**
-```json
-{ "currentPassword": "oldPass", "newPassword": "newPass" }
-```
-
----
-
-### User Routes — `/api/v1/user`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `PATCH` | `/profile` | 🔒 Any authenticated user | Update the user's name or avatar. Accepts `multipart/form-data` with an optional `image` field (single file). |
-
----
-
-### Admin Routes — `/api/v1/admin`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/info` | Public | Retrieve the admin's public profile information (name, bio, contact links, etc.). |
-| `PATCH` | `/profile` | 🔒 Admin | Update the admin's profile details (name, bio, social links, etc.). |
-| `PATCH` | `/clicks` | Public | Increment a WhatsApp or Messenger click counter. Called client-side when a visitor taps a contact button. |
-
-**`PATCH /clicks` — Request Body**
-```json
-{ "type": "whatsapp" }
-// or
-{ "type": "messenger" }
-```
-
----
-
-### Category Routes — `/api/v1/category`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/` | 🔒 Admin | Create a new product category. |
-| `GET` | `/` | Public | Retrieve all categories. |
-| `GET` | `/:id` | Public | Retrieve a single category by ID. |
-| `PATCH` | `/:id` | 🔒 Admin | Update a category by ID. |
-| `DELETE` | `/:id` | 🔒 Admin | Delete a category by ID. |
-
-**`POST /` — Request Body**
-```json
-{ "name": "Excavators" }
-```
-
----
-
-### Product Routes — `/api/v1/product`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/` | 🔒 Admin | Create a new product. Accepts `multipart/form-data`; up to **5 images** uploaded directly to Cloudinary. |
-| `GET` | `/` | Public | List all products with search, filtering, field selection, and pagination support. |
-| `GET` | `/:id` | Public | Retrieve a single product by ID. **Automatically increments the product's view count and records the click date.** |
-| `PATCH` | `/:id` | 🔒 Admin | Update a product. If new images are provided, old Cloudinary images are deleted automatically. Accepts `multipart/form-data`. |
-| `DELETE` | `/:id` | 🔒 Admin | Delete a product and remove all associated images from Cloudinary. |
-
-**Query Parameters for `GET /`**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `searchTerm` | `string` | Full-text search across `name`, `origin`, `brandName`, `partNumber` |
-| `categoryId` | `string` | Filter by category ID |
-| `page` | `number` | Page number (default: `1`) |
-| `limit` | `number` | Items per page (default: `10`) |
-| `fields` | `string` | Comma-separated list of fields to return |
-
-**`POST /` — Form Fields**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | ✅ | Product name |
-| `categoryId` | `string` | ✅ | MongoDB ObjectId of the category |
-| `origin` | `string` | ✅ | Country of origin |
-| `brandName` | `string` | ✅ | Brand name |
-| `partNumber` | `string` | ✅ | Manufacturer part number |
-| `description` | `string` | Optional | Product description |
-| `images` | `File[]` | Optional | Up to 5 image files (uploaded to Cloudinary) |
-
----
-
-### Stats Routes — `/api/v1/stats`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/dashboard` | 🔒 Admin | Returns the full dashboard analytics payload. |
-
-**Dashboard Response Shape**
+#### Error Response Structure
+Unsuccessful requests or schema validation failures return a standard error shape:
 ```json
 {
-  "products": {
-    "total": 120,
-    "todayCount": 3,
-    "growthPercent": 50
-  },
-  "categories": {
-    "total": 12,
-    "todayCount": 1,
-    "growthPercent": 0
-  },
-  "whatsappClicks": {
-    "total": 840,
-    "todayCount": 14,
-    "growthPercent": 27
-  },
-  "messengerClicks": {
-    "total": 310,
-    "todayCount": 5,
-    "growthPercent": -17
-  },
-  "productClicksLast30Days": [
-    { "date": "2026-05-01", "count": 42 },
-    ...
-  ],
-  "topViewedProducts": [
+  "success": false,
+  "message": "Error details summary",
+  "errorSources": [
     {
-      "id": "...",
-      "name": "Komatsu PC200",
-      "category": "Excavators",
-      "images": ["https://..."],
-      "totalClicks": 304,
-      "growthPercent": 12
+      "path": "body.field_name",
+      "message": "Specific validation failure instruction"
     }
   ]
 }
 ```
+
+#### Authentication Rules
+Endpoints requiring authentication are marked with 🔒. 
+- Authentication is strictly checked through a JWT token stored in the `token` cookie.
+- If the token is verified successfully, its payload (`userId`, `role`, `email`) is bound onto the Express request object as `req.user`.
+- Role verification (e.g. `UserRole.ADMIN`) is checked after the token is verified.
+
+---
+
+### System Warmup Endpoint
+
+#### `GET /api/v1/warmup`
+Warms up the API service and checks database connectivity.
+- **Authorization**: Public
+- **Request Parameters**: None
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "warm",
+    "db": "connected",   // "connected" or "connecting"
+    "ts": 1719864000000
+  }
+  ```
+
+---
+
+### Auth Endpoints — `/api/v1/auth`
+
+#### `POST /login`
+Authenticates user credentials, sets the `token` cookie, and returns the token.
+- **Authorization**: Public
+- **Request Body**:
+  ```json
+  {
+    "email": "admin@example.com", // Valid email format (Required)
+    "password": "securepassword"   // Minimum length 8 (Required)
+  }
+  ```
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Login successful",
+    "data": {
+      "token": "JWT_STRING",
+      "user": {
+        "_id": "USER_ID",
+        "email": "admin@example.com",
+        "role": "admin",
+        "createdAt": "2026-07-01T12:00:00.000Z",
+        "updatedAt": "2026-07-01T12:00:00.000Z"
+      }
+    }
+  }
+  ```
+
+#### `POST /forget-password`
+Generates a 6-digit OTP code and emails it to the user. Valid for 5 minutes.
+- **Authorization**: Public
+- **Request Body**:
+  ```json
+  {
+    "email": "admin@example.com"
+  }
+  ```
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "OTP sent to email. Valid for 5 minutes."
+  }
+  ```
+
+#### `POST /verify-email`
+Verifies the OTP code emailed to the user. Must be executed successfully before password resetting is permitted.
+- **Authorization**: Public
+- **Request Body**:
+  ```json
+  {
+    "email": "admin@example.com",
+    "otp": "123456" // Exactly 6 digits (Required)
+  }
+  ```
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Email verified. You can now reset your password."
+  }
+  ```
+
+#### `POST /reset-password`
+Overwrites the user's password. Requires verification via the `/verify-email` endpoint first.
+- **Authorization**: Public
+- **Request Body**:
+  ```json
+  {
+    "email": "admin@example.com",
+    "newPassword": "newsecurepassword123" // Minimum length 8 (Required)
+  }
+  ```
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Password reset successful."
+  }
+  ```
+
+#### `GET /me`
+Retrieves profile information for the authenticated user.
+- **Authorization**: 🔒 Admin
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "User fetched successfully",
+    "data": {
+      "_id": "USER_ID",
+      "email": "admin@example.com",
+      "role": "admin",
+      "name": "Admin User",
+      "avatar": "https://res.cloudinary.com/..."
+    }
+  }
+  ```
+
+#### `PATCH /change-password`
+Changes the password for the currently logged in administrator.
+- **Authorization**: 🔒 Admin
+- **Request Body**:
+  ```json
+  {
+    "currentPassword": "oldsecurepassword", // Required
+    "newPassword": "newsecurepassword"      // Required
+  }
+  ```
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Password changed successfully"
+  }
+  ```
+
+---
+
+### User Endpoints — `/api/v1/user`
+
+#### `PATCH /profile`
+Updates profile metadata for the authenticated user. Accepts files.
+- **Authorization**: 🔒 Any authenticated user
+- **Content-Type**: `multipart/form-data`
+- **Form Fields**:
+  - `name`: string (Optional)
+  - `image`: file (Optional, single avatar file)
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "User profile updated successfully",
+    "data": {
+      "_id": "USER_ID",
+      "email": "user@example.com",
+      "role": "user",
+      "name": "Updated Name",
+      "avatar": "https://res.cloudinary.com/..."
+    }
+  }
+  ```
+
+---
+
+### Admin Profile Endpoints — `/api/v1/admin`
+
+#### `GET /info`
+Retrieves public profile details, social handles, and contact click analytics for the administrator.
+- **Authorization**: Public
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Admin profile info retrieved",
+    "data": {
+      "_id": "ADMIN_ID",
+      "businessName": "Abroz Machinery",
+      "businessDescription": "...",
+      "businessAddress": "...",
+      "shippingInfo": "...",
+      "social": {
+        "facebookPage1": "https://facebook.com/...",
+        "facebookPage2": "",
+        "messengerId": "abroz.machinery",
+        "whatsappNumber": "60123456789",
+        "emailAddress": "contact@abroz.com",
+        "websiteLink": "https://abroz.com"
+      },
+      "clicks": {
+        "whatsapp": 124,
+        "messenger": 45
+      }
+    }
+  }
+  ```
+
+#### `PATCH /profile`
+Updates public business settings and social URLs.
+- **Authorization**: 🔒 Admin
+- **Request Body** (At least one property must be provided):
+  ```json
+  {
+    "businessName": "New Brand Name",       // Optional
+    "businessDescription": "Updated Bio",   // Optional
+    "businessAddress": "HQ Street Address",  // Optional
+    "shippingInfo": "Delivery details",     // Optional
+    "social": {                             // Optional
+      "facebookPage1": "https://facebook.com/page1", // URL format or empty string
+      "facebookPage2": "https://facebook.com/page2", // URL format or empty string
+      "messengerId": "messenger_id",
+      "whatsappNumber": "60123456789",
+      "emailAddress": "info@brand.com",              // Email format
+      "websiteLink": "https://brand.com"             // URL format or empty string
+    }
+  }
+  ```
+- **Response Shape**: Returns the updated admin object inside the `data` key.
+
+#### `PATCH /clicks`
+Increments the click count for a social contact link (WhatsApp or Messenger). Triggered by the client application.
+- **Authorization**: Public
+- **Request Body**:
+  ```json
+  {
+    "type": "whatsapp" // Either "whatsapp" or "messenger" (Required)
+  }
+  ```
+- **Response Shape**: Returns the updated admin object inside the `data` key.
+
+---
+
+### Category Endpoints — `/api/v1/category`
+
+#### `POST /`
+Creates a new product category.
+- **Authorization**: 🔒 Admin
+- **Request Body**:
+  ```json
+  {
+    "name": "Excavators",       // String, minimum length 1 (Required)
+    "description": "Heavy machinery category" // String (Optional)
+  }
+  ```
+- **Response Shape**: Returns the created category object.
+
+#### `GET /`
+Retrieves all categories.
+- **Authorization**: Public
+- **Response Shape**: Returns an array of category documents.
+
+#### `GET /:id`
+Retrieves a single category.
+- **Authorization**: Public
+- **Response Shape**: Returns the category matching the path parameter.
+
+#### `PATCH /:id`
+Modifies category settings.
+- **Authorization**: 🔒 Admin
+- **Request Body** (At least one property must be provided):
+  ```json
+  {
+    "name": "Heavy Excavators",
+    "description": "Updated category description"
+  }
+  ```
+- **Response Shape**: Returns the updated category object.
+
+#### `DELETE /:id`
+Deletes a category.
+- **Authorization**: 🔒 Admin
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Category deleted successfully"
+  }
+  ```
+
+---
+
+### Product Endpoints — `/api/v1/product`
+
+#### `POST /`
+Creates a new product catalog listing. Accepts file uploads.
+- **Authorization**: 🔒 Admin
+- **Content-Type**: `multipart/form-data`
+- **Form Fields**:
+  - `name`: string (Required)
+  - `description`: string (Required)
+  - `categoryId`: MongoDB ObjectId (Required)
+  - `quantity`: integer >= 0 (Required)
+  - `condition`: string (`"new"`, `"used"`, or `"refurbished"`) (Required)
+  - `origin`: string (Optional)
+  - `partNumber`: string (Optional)
+  - `brandName`: string (Optional)
+  - `compatibility`: string (Optional)
+  - `shippingInfo`: string (Optional)
+  - `conditionNotes`: string (Optional)
+  - `status`: string (`"active"` or `"draft"`) (Optional, defaults to `"draft"`)
+  - `features`: string[] or string array (Optional)
+  - `images`: file[] (Optional, up to 5 image files)
+- **Response Shape**: Returns the created product object.
+
+#### `GET /`
+Lists products using the flexible QueryBuilder system.
+- **Authorization**: Public
+- **Query Parameters**:
+  - `search`: Searches across `name`, `origin`, `brandName`, and `partNumber` fields (Case-insensitive regex)
+  - `categoryId`: Filters by exact Category ID
+  - `condition`: Filters by condition (`"new"`, `"used"`, `"refurbished"`)
+  - `status`: Filters by catalog status (`"active"`, `"draft"`)
+  - `sort`: Database key to sort results by (Defaults to `"createdAt"`)
+  - `order`: Sort direction (`"asc"` or `"desc"`, Defaults to `"desc"`)
+  - `page`: Page index (Defaults to `1`)
+  - `limit`: Page count (Defaults to `10`, maximum limits are clamped to `100`)
+  - `fields`: Comma-separated list of properties to include in the output (e.g. `name,images,brandName`)
+  - **Range Filters (`min[Field]` / `max[Field]`)**:
+    - Querying `minQuantity=10` translates to a `$gte: 10` filter on the `quantity` field.
+    - Querying `maxQuantity=50` translates to a `$lte: 50` filter on the `quantity` field.
+- **Response Shape**: Returns a list of products under `data` and pagination details under `meta`.
+
+#### `GET /:id`
+Retrieves details for a single product. **Side Effect**: Increments the product's view click metrics for today.
+- **Authorization**: Public
+- **Response Shape**: Returns the matching product document with populated category data.
+
+#### `PATCH /:id`
+Updates product specifications. If new files are uploaded under the `images` field, all old images are automatically removed from Cloudinary storage.
+- **Authorization**: 🔒 Admin
+- **Content-Type**: `multipart/form-data`
+- **Form Fields**: Same fields as `POST /` (All fields optional)
+- **Response Shape**: Returns the updated product object.
+
+#### `DELETE /:id`
+Permanently deletes a product listing and removes all its images from Cloudinary storage.
+- **Authorization**: 🔒 Admin
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Product deleted successfully"
+  }
+  ```
+
+---
+
+### Customer Endpoints — `/api/v1/customer`
+
+#### `POST /`
+Creates a customer record in the directory.
+- **Authorization**: 🔒 Admin
+- **Request Body**:
+  ```json
+  {
+    "name": "John Doe",           // String, length 2-100 (Required)
+    "mobileNumber": "+60123456789" // String, must be unique (Required)
+  }
+  ```
+- **Response Shape**: Returns the created customer object.
+
+#### `GET /`
+Retrieves a paginated list of customers.
+- **Authorization**: 🔒 Admin
+- **Query Parameters**:
+  - `search`: Searches across `name` and `mobileNumber` fields
+  - `sort`, `order`, `page`, `limit`, `fields` (Supported by QueryBuilder)
+- **Response Shape**: Returns an array of customers and pagination details.
+
+#### `GET /:id`
+Retrieves details for a single customer.
+- **Authorization**: 🔒 Admin
+- **Response Shape**: Returns the customer object.
+
+#### `PATCH /:id`
+Updates customer details.
+- **Authorization**: 🔒 Admin
+- **Request Body** (At least one property must be provided):
+  ```json
+  {
+    "name": "John Updated",
+    "mobileNumber": "+60987654321" // Must be unique if modified
+  }
+  ```
+- **Response Shape**: Returns the updated customer object.
+
+#### `DELETE /:id`
+Deletes a customer from the database.
+- **Authorization**: 🔒 Admin
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Customer deleted successfully"
+  }
+  ```
+
+---
+
+### SMS Broadcast Endpoints — `/api/v1/broadcast`
+
+#### `POST /`
+Dispatches personalized bulk SMS messages using iSMS Malaysia.
+- **Authorization**: 🔒 Admin
+- **Workflow**:
+  1. Resolves customer details for the provided `customerIds`.
+  2. Replaces `[name]` placeholder values in the `message` template (case-insensitive) with each customer's actual name.
+  3. Splits recipient lists into chunks of 50 (iSMS API limit).
+  4. Automatically detects Unicode characters and adjusts encoding (Type 1 for ASCII, Type 2 for Unicode).
+  5. Records the dispatch log in `BulkSmsBatch` history with a state of `"completed"` or `"failed"`.
+- **Request Body**:
+  ```json
+  {
+    "customerIds": ["609f7a77e8a93c001f3796d1", "609f7a77e8a93c001f3796d2"], // Array of 24-char ObjectIds (Required, min 1)
+    "message": "Hello [name]! A new bulldozer has arrived at our warehouse.", // String, length 1-1000 (Required)
+    "batchName": "Promo July 2026" // Custom log label (Optional)
+  }
+  ```
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Bulk SMS broadcast initiated and logged successfully",
+    "data": {
+      "_id": "BATCH_HISTORY_ID",
+      "batchName": "Promo July 2026",
+      "message": "Hello [name]! A new bulldozer has arrived at our warehouse.",
+      "totalRecipients": 2,
+      "successCount": 2,
+      "failedCount": 0,
+      "status": "completed", // "pending", "processing", "completed", "failed"
+      "provider": "isms",
+      "apiResponse": {
+        "code": 2000,
+        "status": "success",
+        "msgid": "..."
+      },
+      "startedAt": "2026-07-01T20:00:00.000Z",
+      "completedAt": "2026-07-01T20:00:01.000Z",
+      "createdAt": "2026-07-01T20:00:00.000Z",
+      "updatedAt": "2026-07-01T20:00:01.000Z"
+    }
+  }
+  ```
+
+---
+
+### Dashboard Stats Endpoints — `/api/v1/stats`
+
+#### `GET /dashboard`
+Aggregates and returns dashboard statistics, growth metrics, and activity logs.
+- **Authorization**: 🔒 Admin
+- **Response Shape**:
+  ```json
+  {
+    "success": true,
+    "message": "Dashboard stats fetched successfully",
+    "data": {
+      "products": {
+        "total": 145,
+        "todayCount": 5,
+        "growthPercent": 25
+      },
+      "categories": {
+        "total": 12,
+        "todayCount": 0,
+        "growthPercent": 0
+      },
+      "whatsappClicks": {
+        "total": 450,
+        "todayCount": 15,
+        "growthPercent": 50
+      },
+      "messengerClicks": {
+        "total": 120,
+        "todayCount": 2,
+        "growthPercent": -33
+      },
+      "productClicksLast30Days": [
+        { "date": "2026-06-15", "count": 22 },
+        { "date": "2026-06-16", "count": 45 }
+      ],
+      "activitiesLast7Days": [
+        {
+          "id": "60af6c88f2b34a1122a33445",
+          "method": "CREATE",
+          "description": "Created product: Caterpillar D11",
+          "createdAt": "2026-07-01T15:20:00.000Z"
+        }
+      ],
+      "topViewedProducts": [
+        {
+          "id": "60df8b22a2b34c2233b44556",
+          "name": "Caterpillar D11",
+          "category": "Bulldozers",
+          "images": ["https://res.cloudinary.com/..."],
+          "totalClicks": 984,
+          "growthPercent": 14
+        }
+      ]
+    }
+  }
+  ```
 
 ---
 
 ## Getting Started — Local Development
 
 ### Prerequisites
+- **Node.js** v22+
+- **pnpm** (preferred) or npm
+- **MongoDB** instance (Local or Atlas cloud cluster)
+- **Cloudinary** developer account
+- **SMTP Credentials** (e.g. Gmail App Password)
+- **iSMS Malaysia** developer credentials
 
-- [Node.js 22+](https://nodejs.org/)
-- [pnpm](https://pnpm.io/) (`npm install -g pnpm`)
-- A running [MongoDB](https://www.mongodb.com/try/download/community) instance (local or Atlas)
-<!-- - A running [Redis](https://redis.io/docs/getting-started/) instance -->
-- A [Cloudinary](https://cloudinary.com/) account
-
-### 1. Clone the repository
-
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/meshal10613/Abroz-Machinery-Server--
+git clone https://github.com/meshal10613/Abroz-Machinery-Server--.git
 cd Abroz-Machinery-Server--
 ```
 
-### 2. Install dependencies
-
+### 2. Install Dependencies
 ```bash
 pnpm install
 ```
 
-### 3. Configure environment variables
-
+### 3. Configure the Environment
 ```bash
 cp .env.example .env
-# Open .env and fill in all required values
+# Open .env and fill in your connection strings and api keys
 ```
 
-### 4. Run the development server
-
+### 4. Launch the Development Server
 ```bash
 pnpm dev
 ```
+The server runs locally with hot reloading at `http://localhost:5000`. On first boot, the seeder automatically populates the admin account.
 
-The server starts with `tsx watch` (hot-reload on file changes) at `http://localhost:<PORT>`.
-
-On first run, the seeder will automatically create the admin user defined in your `.env`.
-
-### 5. Build for production
-
+### 5. Compile and Start in Production Mode
 ```bash
-pnpm build       # compiles TypeScript → dist/server.js via tsup
-pnpm start       # runs the compiled output
+pnpm build  # Compiles TypeScript source to dist/server.js using tsup
+pnpm start  # Runs the compiled JavaScript build
 ```
 
 ---
 
 ## Running with Docker
 
-The Docker setup includes **5 app replicas** and an **Nginx** reverse proxy with load balancing — all orchestrated by Docker Compose.
+The containerization stack spins up **5 application replicas** and routes incoming traffic through an **Nginx reverse proxy** acting as a load balancer on port `80`.
 
-### Prerequisites
+### 1. Configure the Environment
+Ensure your `.env` contains correct credentials. Use hostname `redis` inside Docker if caching services are ever re-enabled.
 
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
-
-### 1. Clone the repository
-
+### 2. Build and Launch Containers
 ```bash
-git clone https://github.com/meshal10613/Abroz-Machinery-Server--
-cd Abroz-Machinery-Server--
-```
-
-### 2. Configure environment variables
-
-```bash
-cp .env.example .env
-# Fill in all required values.
-# Important: REDIS_HOST is disabled because Redis is commented out
-```
-
-### 3. Build and start all services
-
-```bash
-docker compose up --build
-```
-
-This will:
-- Build the Node.js app image from the `Dockerfile`
-- Start **5 replicas** of the app container (port `5000` exposed internally)
-<!-- - Start a **Redis 7** container with persistent volume (`redis_data`) -->
-- Start an **Nginx** container on port **80**, load-balancing across all app replicas
-
-### 4. Access the API
-
-```
-http://localhost/api/v1
-```
-
-### 5. Useful Docker commands
-
-```bash
-# Run in detached mode
-docker compose up -d
-
-# Run in detached mode
 docker compose up --build -d
+```
+This command runs the following steps in detached mode:
+1. Builds the Node.js application image using the `Dockerfile`.
+2. Starts 5 parallel application container instances (each bound internally to port `5000`).
+3. Starts Nginx on port `80`, configured with round-robin load balancing across all 5 instances.
 
-# View logs for all services
+### 3. Verification
+```bash
+curl http://localhost/api/v1/warmup
+```
+
+### 4. Useful Docker Commands
+```bash
+# View aggregated service logs
 docker compose logs -f
 
-# View logs for the app only
+# View logs exclusively for application instances
 docker compose logs -f app
 
-# Stop all services
+# Scale application instances up or down
+docker compose up -d --scale app=8
+
+# Halt execution and teardown containers
 docker compose down
 
-# Stop and remove volumes
+# Teardown containers and wipe associated anonymous volumes
 docker compose down -v
-
-#
-docker compose up -d --scale app=5 --remove-orphans
 ```
 
 ---
 
-## Architecture Overview
+## CORS Whitelist
 
-```
-Client
-  │
-  ▼
-Nginx (port 80)
-  │  Round-robin load balancing
-  ├─► App Replica 1 :5000
-  ├─► App Replica 2 :5000
-  ├─► App Replica 3 :5000
-  ├─► App Replica 4 :5000
-  └─► App Replica 5 :5000
-         │
-         ├── MongoDB Atlas (cloud)
-         # ├── Redis (container / local)
-         └── Cloudinary (cloud CDN)
-```
+The API accepts credentialed request traffic (`credentials: true`) from the following origins:
+- `http://localhost:3000` (Local Frontend Dev)
+- `https://abroz-admin-dashboard.vercel.app` (Production Admin Panel)
+- `https://abroz-admin-dashboard-with-api.vercel.app` (Staging Admin Panel)
 
-**Request flow inside the app:**
-
-```
-HTTP Request
-  → Cookie Parser / JSON Body Parser
-  → CORS Middleware
-  → Router (/api/v1/*)
-    → Zod Validation Middleware
-    → authenticate() — verifies JWT from cookie or Authorization header
-    → authorize(role) — checks UserRole
-    → Controller
-      → Service (business logic)
-        → Mongoose / Cloudinary
-      → sendResponse() — uniform JSON envelope
-  → globalErrorHandler (catches all thrown errors)
-  → notFound (404 catch-all)
-```
-
----
-
-## Authentication & Authorization
-
-- After a successful `POST /api/v1/auth/login`, the server returns a JWT token in both the JSON response body and as an HTTP-only cookie.
-- Include the token in subsequent requests via the cookie (automatic in browsers) **or** the `Authorization` header:
-  ```
-  Authorization: Bearer <your_token>
-  ```
-- Protected routes require the `authenticate` middleware, which decodes the token and attaches the user to `req.user`.
-- Admin-only routes additionally require `authorize(UserRole.ADMIN)`, which checks `req.user.role`.
-
----
-
-## CORS
-
-The server currently allows requests from:
-
-- `http://localhost:3000` (local frontend development)
-- `https://abroz-admin-dashboard.vercel.app` (production admin dashboard)
-
-To add additional origins, update the `cors` configuration in `src/app.ts`.
+Additional origins can be configured in `src/app.ts`.
 
 ---
 
 ## License
 
-ISC © [Abroz Machinery](https://github.com/meshal10613/Abroz-Machinery-Server--)
+This software is licensed under the [ISC License](https://opensource.org/licenses/ISC).
+
+Copyright © 2026 [Abroz Machinery](https://github.com/meshal10613/Abroz-Machinery-Server--). All rights reserved.
