@@ -49,7 +49,7 @@ export const sendBulkSMS = async (recipients: SMSRecipient[]): Promise<any> => {
                 type,
                 agreedterm: "YES",
                 messages: chunk.map((r) => ({
-                    dstno: r.to,
+                    dstno: r.to.replace(/^\+/, ""),
                     msg: r.body,
                 })),
             };
