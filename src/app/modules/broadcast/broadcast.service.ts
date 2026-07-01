@@ -46,12 +46,12 @@ const sendBroadcastToCustomers = async (payload: SendBroadcastInput) => {
         message: payload.message, // store original template (with [name]) for reference
         totalRecipients: recipients.length,
         status: "processing",
-        provider: "bulksms",
+        provider: "isms",
         startedAt,
     });
 
     try {
-        // 2. Call BulkSMS API — each recipient gets their personalised message body
+        // 2. Call iSMS API — each recipient gets their personalised message body
         const smsResult = await sendBulkSMS(recipients);
 
         // 3. Update history to completed
@@ -65,7 +65,7 @@ const sendBroadcastToCustomers = async (payload: SendBroadcastInput) => {
         // 4. Log activity
         await logActivity(
             ActivityMethod.CREATE,
-            `Sent BulkSMS broadcast "${batchName}" to ${recipients.length} recipients`,
+            `Sent iSMS broadcast "${batchName}" to ${recipients.length} recipients`,
         );
 
         return broadcastRecord;

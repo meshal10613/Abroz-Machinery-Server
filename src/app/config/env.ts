@@ -43,9 +43,9 @@ export const env = {
         port: requiredEnv("SMTP_PORT"),
         from: requiredEnv("SMTP_FROM"),
     },
-    bulkSMS: {
-        id: requiredEnv("BULKSMS_TOKEN_ID"),
-        secret: requiredEnv("BULKSMS_TOKEN_SECRET"),
-        url: requiredEnv("BULKSMS_BASE_URL"),
+    isms: {
+        username: requiredEnv("ISMS_USERNAME"),
+        secretKey: requiredEnv("ISMS_SECRET_KEY"),
+        baseUrl: requiredEnv("ISMS_BASE_URL"),
     }
 };

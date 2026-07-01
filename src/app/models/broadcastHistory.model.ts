@@ -37,7 +37,7 @@ const broadcastHistorySchema = new mongoose.Schema(
 
         provider: {
             type: String,
-            default: "bulksms",
+            default: "isms",
         },
 
         apiResponse: {
