@@ -7,7 +7,7 @@ import BroadcastHistory from "../../models/broadcastHistory.model";
 import { SendBroadcastInput } from "./broadcast.interface";
 import status from "http-status";
 
-const sendBrodcastToCustomers = async (payload: SendBroadcastInput) => {
+const sendBroadcastToCustomers = async (payload: SendBroadcastInput) => {
     // Fetch both name and mobileNumber so we can personalise messages
     const customers = await Customer.find({
         _id: { $in: payload.customerIds },
@@ -20,7 +20,9 @@ const sendBrodcastToCustomers = async (payload: SendBroadcastInput) => {
         );
     }
 
-    // Build one recipient object per customer, substituting [name] with their actual name
+    // Build one recipient object per customer.
+    // If the message template contains [name], substitute it with the customer's
+    // actual name; otherwise the message is sent as-is to every recipient.
     const recipients = customers
         .filter((c) => c.mobileNumber && c.mobileNumber.trim() !== "")
         .map((c) => ({
@@ -38,7 +40,7 @@ const sendBrodcastToCustomers = async (payload: SendBroadcastInput) => {
     const startedAt = new Date();
     const batchName = payload.batchName || `Batch-${Date.now()}`;
 
-    // 1. Create initial pending broadcast history record
+    // 1. Create initial processing broadcast history record
     const broadcastRecord = await BroadcastHistory.create({
         batchName,
         message: payload.message, // store original template (with [name]) for reference
@@ -80,6 +82,6 @@ const sendBrodcastToCustomers = async (payload: SendBroadcastInput) => {
     }
 };
 
-export const BrodcastService = {
-    sendBrodcastToCustomers,
+export const BroadcastService = {
+    sendBroadcastToCustomers,
 };
