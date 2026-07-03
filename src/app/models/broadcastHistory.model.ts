@@ -31,7 +31,7 @@ const broadcastHistorySchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ["pending", "processing", "completed", "failed"],
+            enum: ["pending", "processing", "completed", "partial", "failed"],
             default: "pending",
         },
 

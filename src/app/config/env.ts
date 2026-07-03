@@ -47,5 +47,8 @@ export const env = {
         username: requiredEnv("ISMS_USERNAME"),
         secretKey: requiredEnv("ISMS_SECRET_KEY"),
         baseUrl: requiredEnv("ISMS_BASE_URL"),
-    }
+        // Optional: some iSMS accounts require a pre-registered Sender ID.
+        // Leave ISMS_SEND_ID unset if your account doesn't need one.
+        sendId: process.env.ISMS_SEND_ID || "",
+    },
 };

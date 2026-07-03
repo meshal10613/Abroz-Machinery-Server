@@ -51,21 +51,25 @@ const sendBroadcastToCustomers = async (payload: SendBroadcastInput) => {
     });
 
     try {
-        // 2. Call iSMS API — each recipient gets their personalised message body
+        // 2. Call iSMS API — each recipient gets their personalised message body.
+        // This only throws if EVERY recipient failed; otherwise it returns
+        // per-recipient success/failure so partial sends are recorded accurately.
         const smsResult = await sendBulkSMS(recipients);
 
-        // 3. Update history to completed
-        broadcastRecord.status = "completed";
-        broadcastRecord.successCount = recipients.length;
-        broadcastRecord.failedCount = 0;
-        broadcastRecord.apiResponse = smsResult;
+        // 3. Update history — "completed" if everyone succeeded, "partial" if
+        // some recipients failed (e.g. bad numbers) but others went through.
+        broadcastRecord.status =
+            smsResult.failedCount > 0 ? "partial" : "completed";
+        broadcastRecord.successCount = smsResult.successCount;
+        broadcastRecord.failedCount = smsResult.failedCount;
+        broadcastRecord.apiResponse = smsResult.raw;
         broadcastRecord.completedAt = new Date();
         await broadcastRecord.save();
 
         // 4. Log activity
         await logActivity(
             ActivityMethod.CREATE,
-            `Sent iSMS broadcast "${batchName}" to ${recipients.length} recipients`,
+            `Sent iSMS broadcast "${batchName}": ${smsResult.successCount} succeeded, ${smsResult.failedCount} failed`,
         );
 
         return broadcastRecord;
