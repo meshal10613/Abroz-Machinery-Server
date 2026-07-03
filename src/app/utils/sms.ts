@@ -32,7 +32,7 @@ export interface SendBulkSMSResult {
     raw: any;
 }
 
-// Per https://www.isms.com.my/response_result.php
+// Per https://www.isms.com.my/sms-api-documentation.php (JSON API v2.1)
 const ISMS_ERROR_CODES: Record<number, string> = {
     [-1000]: "UNKNOWN ERROR",
     [-1001]: "AUTHENTICATION FAILED",
@@ -42,59 +42,102 @@ const ISMS_ERROR_CODES: Record<number, string> = {
     [-1005]: "INVALID SMS TYPE",
     [-1006]: "INVALID BODY LENGTH (1-900)",
     [-1007]: "INVALID HEX BODY",
-    [-1008]: "MISSING PARAMETER",
-    [-1009]: "INVALID DESTINATION NUMBER",
+    [-1008]: "MISSING PARAMETER (or invalid destination number)",
+    [-1009]: "INVALID MESSAGE CONTENT (filtered / prohibited content)",
+    [-1010]: "MAXIMUM DESTINATION NUMBERS EXCEEDED (50 per request)",
     [-1012]: "INVALID MESSAGE TYPE (use type=2 for Unicode)",
     [-1013]: "INVALID TERM AND AGREEMENT (agreedterm=YES required)",
+    [-1014]: "INVALID JSON FORMAT",
+    [-1015]: "INVALID REQUEST METHOD (POST only)",
 };
 
+/** Shape of a single recipient's outcome inside the JSON API's `results` array. */
+interface IsmsResultEntry {
+    dstno: string;
+    code: number;
+    status: string;
+    sms_id?: string;
+}
+
+/** Shape of the top-level response from POST /isms_send_json.php */
+interface IsmsJsonResponse {
+    status: "success" | "partial" | "error";
+    code: number;
+    message: string;
+    total_messages?: number;
+    total_success?: number;
+    total_failed?: number;
+    total_credits_used?: number;
+    results?: IsmsResultEntry[];
+}
+
 /**
- * Parse a single iSMS result entry. iSMS does NOT return `{ code, status }`
- * objects — per their docs, a success looks like the string "2000 = SUCCESS"
- * (or is blank/empty), and a failure is a bare negative numeric code (e.g. -1004),
- * sometimes as a number, sometimes as a string, sometimes with a trailing
- * ":<trx_id>" on success (e.g. "2000 = SUCCESS:1143007207").
+ * Parse the response for one chunk of recipients.
+ *
+ * iSMS's JSON API returns ONE object per request, not one entry per
+ * recipient at the top level:
+ *   - On success/partial: { status, code: 2000, results: [{ dstno, code, status, sms_id }, ...] }
+ *     — `results` has exactly one entry per recipient, in request order.
+ *   - On a total rejection (bad auth, no credits, IP not whitelisted, bad
+ *     agreedterm, etc.): { status: "error", code: <negative>, message }
+ *     — there is NO `results` array at all; the error applies to every
+ *     recipient in the chunk.
  */
-const parseIsmsResultEntry = (entry: unknown, to: string): SMSSendResult => {
-    // Treat null/undefined/empty string as success (iSMS docs: "or EMPTY/BLANK")
-    if (entry === null || entry === undefined || entry === "") {
-        return { to, raw: String(entry), code: 2000, success: true };
+const parseIsmsChunkResponse = (
+    data: unknown,
+    chunk: SMSRecipient[],
+): SMSSendResult[] => {
+    const response =
+        data && typeof data === "object" ? (data as IsmsJsonResponse) : null;
+
+    // Total rejection: no per-recipient results, one error covers the whole chunk.
+    if (!response || !Array.isArray(response.results)) {
+        const raw =
+            typeof data === "string" ? data : JSON.stringify(data ?? null);
+        const code = Number(response?.code ?? NaN);
+        const errorDescription =
+            (!Number.isNaN(code) ? ISMS_ERROR_CODES[code] : undefined) ??
+            response?.message ??
+            (raw.trim() ? raw : "Unknown error");
+
+        return chunk.map((r) => ({
+            to: r.to,
+            raw,
+            code: Number.isNaN(code) ? null : code,
+            success: false,
+            errorDescription,
+        }));
     }
 
-    const raw = typeof entry === "string" ? entry : JSON.stringify(entry);
+    // Normal case: map each recipient to its own result, by position
+    // (iSMS returns `results` in the same order the `messages` were sent).
+    return chunk.map((r, i) => {
+        const entry = response.results![i];
 
-    // Objects that happen to carry a numeric code/status (some accounts/proxies do this)
-    if (typeof entry === "object" && entry !== null) {
-        const obj = entry as Record<string, any>;
-        const code = Number(obj.code ?? obj.status_code ?? NaN);
-        if (!Number.isNaN(code)) {
-            const success = code === 2000;
+        if (!entry) {
             return {
-                to,
-                raw,
-                code,
-                success,
-                errorDescription: success ? undefined : ISMS_ERROR_CODES[code],
+                to: r.to,
+                raw: "NO RESULT RETURNED",
+                code: null,
+                success: false,
+                errorDescription:
+                    "iSMS did not return a result for this recipient",
             };
         }
-    }
 
-    // Pull the leading (possibly negative) integer out of strings like
-    // "2000 = SUCCESS:1143007207" or "-1004" or "-1004 = INSUFFICIENT CREDITS"
-    const match = raw.match(/-?\d+/);
-    const code = match ? parseInt(match[0], 10) : null;
-    const success = code === 2000;
+        const code = Number(entry.code);
+        const success = code === 2000;
 
-    return {
-        to,
-        raw,
-        code,
-        success,
-        errorDescription: success
-            ? undefined
-            : ((code !== null ? ISMS_ERROR_CODES[code] : undefined) ??
-              (raw.trim() ? raw : "Unknown error")),
-    };
+        return {
+            to: r.to,
+            raw: entry.status ?? String(entry.code),
+            code: Number.isNaN(code) ? null : code,
+            success,
+            errorDescription: success
+                ? undefined
+                : (ISMS_ERROR_CODES[code] ?? entry.status ?? "Unknown error"),
+        };
+    });
 };
 
 /**
@@ -127,13 +170,16 @@ export const sendBulkSMS = async (
             const hasUnicode = chunk.some((r) => /[^\x00-\x7F]/.test(r.body));
             const type = hasUnicode ? 2 : 1;
 
+            // Per the JSON API spec, un/pwd/type/agreedterm/sendid are all
+            // strings (not numbers) at the top level.
             const requestBody = {
                 un: username,
                 pwd: secretKey,
-                type,
+                type: String(type),
                 agreedterm: "YES",
                 ...(env.isms.sendId ? { sendid: env.isms.sendId } : {}),
                 messages: chunk.map((r) => ({
+                    // International format, no leading "+".
                     dstno: r.to.replace(/^\+/, ""),
                     msg: r.body,
                 })),
@@ -157,7 +203,7 @@ export const sendBulkSMS = async (
             }
 
             // iSMS doesn't always return valid JSON (a top-level auth/param error
-            // can come back as a bare string like "-1001"), so parse defensively.
+            // can come back as a bare string), so parse defensively.
             const rawText = await response.text();
             let data: any;
             try {
@@ -166,18 +212,11 @@ export const sendBulkSMS = async (
                 data = rawText;
             }
 
-            // The bulk JSON endpoint returns an array of per-recipient result
-            // strings/entries, in the same order as `messages` was sent — e.g.
-            // ["2000 = SUCCESS:1143007207", "-1009", ...]. A single top-level
-            // error (auth failure, missing param, etc.) can also come back as
-            // one scalar value applying to the whole chunk.
-            const entries: unknown[] = Array.isArray(data)
-                ? data
-                : new Array(chunk.length).fill(data);
-
-            const parsed: SMSSendResult[] = chunk.map((r, i) =>
-                parseIsmsResultEntry(entries[i], r.to),
-            );
+            // The JSON API returns ONE object per request: on success/partial it
+            // has a `results` array (one entry per recipient, same order as sent);
+            // on a total rejection (bad auth, no credits, IP not whitelisted...)
+            // there's no `results` array and the error applies to the whole chunk.
+            const parsed: SMSSendResult[] = parseIsmsChunkResponse(data, chunk);
 
             console.log(
                 `iSMS chunk of ${chunk.length}: ${parsed.filter((p) => p.success).length} succeeded, ${parsed.filter((p) => !p.success).length} failed. Raw: ${rawText}`,
