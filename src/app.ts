@@ -12,10 +12,6 @@ const app = express();
 app.set("view engine", "ejs");
 app.set("views", path.resolve(process.cwd(), `src/app/templates`));
 
-app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 app.use(
     cors({
         origin: (origin, callback) => {
@@ -38,9 +34,16 @@ app.use(
         },
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-        allowedHeaders: ["*"],
+        allowedHeaders: ['*'],
     }),
 );
+
+//? Enable URL-encoded form data parsing
+app.use(express.urlencoded({ extended: true }));
+
+//? Middleware to parse JSON bodies
+app.use(express.json());
+app.use(cookieParser());
 
 // Root route only
 app.get("/", (_: Request, res: Response) => {
