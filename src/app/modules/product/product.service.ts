@@ -40,7 +40,43 @@ const createProduct = async (input: CreateProductInput) => {
 };
 
 const getAllProducts = async (query: ProductsQuery) => {
-    // const cacheKey = `products:${JSON.stringify(query)}`;
+    const queryObj = { ...query };
+
+    // Clean up empty, null, or undefined query parameters
+    Object.keys(queryObj).forEach((key) => {
+        const value = (queryObj as any)[key];
+        if (
+            value === undefined ||
+            value === null ||
+            value === "" ||
+            value === "undefined" ||
+            value === "null"
+        ) {
+            delete (queryObj as any)[key];
+        }
+    });
+
+    // Map category to categoryId for DB query (accepts category name or ID)
+    const targetCategoryId = queryObj.categoryId || queryObj.category;
+    if (targetCategoryId) {
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(targetCategoryId);
+        if (isObjectId) {
+            queryObj.categoryId = targetCategoryId;
+        } else {
+            const categoryDoc = await Category.findOne({
+                name: { $regex: new RegExp(`^${targetCategoryId}$`, "i") },
+            });
+            if (categoryDoc) {
+                queryObj.categoryId = categoryDoc._id.toString();
+            } else {
+                // If category name doesn't match any existing category, set to a non-existent ObjectId to return no results
+                queryObj.categoryId = "000000000000000000000000";
+            }
+        }
+        delete queryObj.category;
+    }
+
+    // const cacheKey = `products:${JSON.stringify(queryObj)}`;
 
     // const cached = await redisClient.get(cacheKey);
 
@@ -50,7 +86,7 @@ const getAllProducts = async (query: ProductsQuery) => {
 
     const result = await new QueryBuilder({
         model: Product,
-        query,
+        query: queryObj,
         searchFields: ["name", "origin", "brandName", "partNumber"],
     })
         .search()

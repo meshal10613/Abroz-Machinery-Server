@@ -21,6 +21,7 @@ export interface UpdateProductInput extends Partial<CreateProductInput> {}
 
 export interface ProductsQuery {
     search?: string;
+    category?: string;
     categoryId?: string;
     status?: string;
     page?: string;
