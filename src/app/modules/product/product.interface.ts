@@ -5,14 +5,13 @@ export interface CreateProductInput {
     origin?: string;
     partNumber?: string;
     brandName?: string;
-    quantity: number;
+    quantity?: number;
     categoryId: string;
     condition: ProductCondition;
     compatibility?: string;
     description: string;
     features?: string[];
     shippingInfo?: string;
-    conditionNotes?: string;
     images?: string[];
     status?: ProductStatus;
 }

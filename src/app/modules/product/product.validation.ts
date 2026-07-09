@@ -14,7 +14,7 @@ const createProductSchema = z.object({
 
     brandName: z.string().optional(),
 
-    quantity: z.number().int().min(0),
+    quantity: z.number().int().min(0).optional(),
 
     categoryId: objectIdSchema,
 
@@ -28,16 +28,13 @@ const createProductSchema = z.object({
 
     shippingInfo: z.string().optional(),
 
-    conditionNotes: z.string().optional(),
-
     status: z.nativeEnum(ProductStatus).optional(),
 });
 
 const updateProductSchema = createProductSchema
     .partial()
     .refine((data) => Object.keys(data).length > 0 || true, {
-        message:
-            "At least one field must be provided for update",
+        message: "At least one field must be provided for update",
     });
 
 export const productValidation = {

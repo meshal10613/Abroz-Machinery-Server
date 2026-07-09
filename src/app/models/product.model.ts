@@ -62,10 +62,6 @@ const ProductSchema = new Schema(
             type: String,
         },
 
-        conditionNotes: {
-            type: String,
-        },
-
         images: {
             type: [String],
             validate: {
