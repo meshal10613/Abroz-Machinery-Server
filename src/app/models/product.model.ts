@@ -25,13 +25,6 @@ const ProductSchema = new Schema(
             trim: true,
         },
 
-        quantity: {
-            type: Number,
-            required: true,
-            min: 0,
-            default: 0,
-        },
-
         categoryId: {
             type: Schema.Types.ObjectId,
             ref: "Category",
