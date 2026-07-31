@@ -76,19 +76,28 @@ export const uploadFileToCloudinary = async (
 
 export const deleteFileFromCloudinary = async (url: string) => {
     try {
-        const regex = /\/v\d+\/(.+?)(?:\.[a-zA-Z0-9]+)+$/;
+        if (!url || typeof url !== "string") return;
 
-        const match = url.match(regex);
+        let publicId = url;
 
-        if (match && match[1]) {
-            const publicId = match[1];
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            const regex = /\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?(?:[?#].*)?$/;
+            const match = url.match(regex);
 
-            await cloudinary.uploader.destroy(publicId, {
-                resource_type: "image",
-            });
-
-            console.log(`File ${publicId} deleted from cloudinary`);
+            if (match && match[1]) {
+                publicId = match[1];
+            } else {
+                console.warn("Could not extract Cloudinary public_id from URL:", url);
+                return;
+            }
         }
+
+        await cloudinary.uploader.destroy(publicId, {
+            resource_type: "image",
+            invalidate: true,
+        });
+
+        console.log(`File ${publicId} deleted from cloudinary`);
     } catch (error) {
         console.error("Error deleting file from Cloudinary:", error);
         throw new AppError(

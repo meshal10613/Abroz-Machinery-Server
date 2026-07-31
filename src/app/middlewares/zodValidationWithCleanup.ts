@@ -14,6 +14,20 @@ export const zodValidateWithCleanup = (
     property: validationProperty,
 ) => {
     return async (req: Request, res: Response, next: NextFunction) => {
+        // Parse req.body.data if passed as JSON string in form-data
+        if (property === validationProperty.BODY && req.body?.data) {
+            try {
+                const parsedData =
+                    typeof req.body.data === "string"
+                        ? JSON.parse(req.body.data)
+                        : req.body.data;
+                req.body = { ...req.body, ...parsedData };
+                delete req.body.data;
+            } catch {
+                // Keep req.body as is if JSON parsing fails
+            }
+        }
+
         const data = req[property];
 
         try {
@@ -21,14 +35,27 @@ export const zodValidateWithCleanup = (
             next();
         } catch (error: any) {
             if (error instanceof ZodError) {
-                // Clean up uploaded files if validation fails
-                if (req.files && Array.isArray(req.files)) {
-                    try {
-                        const filePaths = (req.files as Express.Multer.File[]).map(
-                            (file) => file.path,
-                        );
+                // Collect all uploaded files from req.file or req.files
+                const filesToClean: Express.Multer.File[] = [];
+                if (req.file) {
+                    filesToClean.push(req.file);
+                }
+                if (req.files) {
+                    if (Array.isArray(req.files)) {
+                        filesToClean.push(...req.files);
+                    } else {
+                        Object.values(req.files).forEach((fileArray) => {
+                            filesToClean.push(...fileArray);
+                        });
+                    }
+                }
 
-                        // Delete all uploaded files from Cloudinary
+                if (filesToClean.length > 0) {
+                    try {
+                        const filePaths = filesToClean
+                            .map((file) => file.path || (file as any).secure_url)
+                            .filter(Boolean);
+
                         await Promise.all(
                             filePaths.map((filePath) =>
                                 deleteFileFromCloudinary(filePath),
@@ -43,7 +70,6 @@ export const zodValidateWithCleanup = (
                             "Error during file cleanup:",
                             cleanupError,
                         );
-                        // Continue with error response even if cleanup fails
                     }
                 }
 

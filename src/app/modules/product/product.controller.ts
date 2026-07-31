@@ -13,8 +13,12 @@ const cleanupUploadedFiles = async (
     if (!files || !Array.isArray(files)) return;
 
     try {
-        const filePaths = files.map((file) => file.path);
-        await Promise.all(filePaths.map((path) => deleteFileFromCloudinary(path)));
+        const filePaths = files
+            .map((file) => file.path || (file as any).secure_url)
+            .filter(Boolean);
+        await Promise.all(
+            filePaths.map((path) => deleteFileFromCloudinary(path)),
+        );
         console.log(`Cleaned up ${filePaths.length} files after error`);
     } catch (error) {
         console.error("Error during file cleanup in controller:", error);
@@ -23,12 +27,18 @@ const cleanupUploadedFiles = async (
 
 const createProduct = catchAsync(async (req: Request, res: Response) => {
     try {
-        const payload = req.body;
-        if (req.files && Array.isArray(req.files)) {
-            payload.images = (req.files as Express.Multer.File[]).map(
-                (file) => file.path,
-            );
+        let payload = req.body;
+
+        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+            payload.images = (req.files as Express.Multer.File[]).map((file) => {
+                const url = file.path || (file as any).secure_url;
+                if (!url) {
+                    throw new Error("Failed to upload image to Cloudinary");
+                }
+                return url;
+            });
         }
+
         const result = await ProductService.createProduct(payload);
 
         sendResponse(res, {
@@ -71,14 +81,22 @@ const getSingleProduct = catchAsync(async (req: Request, res: Response) => {
 
 const updateProduct = catchAsync(async (req: Request, res: Response) => {
     try {
-        const payload = req.body;
+        let payload = req.body;
         const { id } = req.params;
 
-        if (req.files && Array.isArray(req.files)) {
-            payload.images = (req.files as Express.Multer.File[]).map(
-                (file) => file.path,
-            );
+        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+            payload.images = (req.files as Express.Multer.File[]).map((file) => {
+                const url = file.path || (file as any).secure_url;
+                if (!url) {
+                    throw new Error("Failed to upload image to Cloudinary");
+                }
+                return url;
+            });
+        } else if (!payload.images) {
+            // Do not erase existing images if no new files were uploaded
+            delete payload.images;
         }
+
         const result = await ProductService.updateProduct(
             id as string,
             payload,

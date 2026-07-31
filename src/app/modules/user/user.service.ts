@@ -12,7 +12,7 @@ const updateUser = async (userId: string, input: UpdateUserInput) => {
         throw new AppError(404, "User not found");
     }
 
-    if (user.image && input.image) {
+    if (user.image && input.image && user.image !== input.image) {
         await deleteFileFromCloudinary(user.image);
     }
 

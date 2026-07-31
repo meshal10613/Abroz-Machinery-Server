@@ -14,7 +14,15 @@ const createProductSchema = z.object({
 
     brandName: z.string().optional(),
 
-    quantity: z.number().int().min(0).optional(),
+    quantity: z
+        .preprocess((val) => {
+            if (typeof val === "string" && val.trim() !== "") {
+                const num = Number(val);
+                return isNaN(num) ? val : num;
+            }
+            return val;
+        }, z.number().int().min(0))
+        .optional(),
 
     categoryId: objectIdSchema,
 
@@ -24,7 +32,20 @@ const createProductSchema = z.object({
 
     description: z.string().min(1),
 
-    features: z.array(z.string()).optional(),
+    features: z
+        .preprocess((val) => {
+            if (typeof val === "string") {
+                try {
+                    const parsed = JSON.parse(val);
+                    if (Array.isArray(parsed)) return parsed;
+                } catch {
+                    return val.split(",").map((s) => s.trim()).filter(Boolean);
+                }
+                return [val];
+            }
+            return val;
+        }, z.array(z.string()))
+        .optional(),
 
     shippingInfo: z.string().optional(),
 
